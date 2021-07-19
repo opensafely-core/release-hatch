@@ -7,6 +7,7 @@ import pytest
 
 # set a testing secret
 os.environ["BACKEND_TOKEN"] = "secret"
+os.environ["SERVER_HOST"] = "http://testserver"
 import hatch.config  # noqa: E402
 
 
@@ -27,8 +28,11 @@ class Workspace:
 def workspace(tmp_path, monkeypatch):
     workspace = tmp_path / "workspace"
     cache = tmp_path / "cache"
+    releases = tmp_path / "releases"
     workspace.mkdir()
     cache.mkdir()
+    releases.mkdir()
     monkeypatch.setattr(hatch.config, "WORKSPACES", tmp_path)
     monkeypatch.setattr(hatch.config, "CACHE", cache)
+    monkeypatch.setattr(hatch.config, "RELEASES", releases)
     return Workspace(workspace, cache, tmp_path)

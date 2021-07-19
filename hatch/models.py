@@ -1,9 +1,13 @@
 import hashlib
-from typing import List
+import os
+import shutil
+import tempfile
+from pathlib import Path
+from typing import Dict, List
 
 from pydantic import BaseModel
 
-from hatch import config
+from hatch import api_client, config
 
 
 def get_sha(path):
@@ -64,5 +68,72 @@ class FilesIndex(BaseModel):
 
     @classmethod
     def from_dir(cls, path, url):
-        paths = sorted([p.relative_to(path) for p in path.glob("**/*") if p.is_file()])
+        paths = get_files(path)
         return cls(files=[FileMetadata.from_path(path, p, url) for p in paths])
+
+
+class Release(BaseModel):
+    """Request a release.
+
+    This is exactly the same API payload as job-server.
+    """
+
+    files: Dict[str, str]
+
+
+def validate_release(workspace, workspace_dir, release):
+    """Validate the Release files are valid and match on sha."""
+    errors = []
+
+    for name, sha in release.files.items():
+        p = workspace_dir / name
+        if not p.exists():
+            errors.append(f"File {name} not found in workspace {workspace}")
+        elif sha != get_sha(p):
+            errors.append(f"File {name} does not match sha of '{sha}'")
+
+    return errors
+
+
+def create_release(workspace, workspace_dir, release, user):
+    """Create a Release on job-server.
+
+    This involves copying the files to a tmpdir, and creating the Release
+    in job-server. On success, the tmpdir is renamed to match the Release id
+    returned from job-server.
+    """
+    # we use dir=config.CACHE as os.rename only works if on same filesystem,
+    # and /tmp is usually a tmpfs
+    tmpdir = tempfile.TemporaryDirectory(dir=config.CACHE)
+    tmp = Path(tmpdir.name)
+    try:
+        # copy files to a temp dir
+        copy_files(workspace_dir, release.files, tmp)
+
+        # tell job-server about the files
+        response = api_client.create_release(workspace, release, user)
+
+        # rename tempdir to match release id
+        os.rename(tmp, config.RELEASES / response.headers["Release-Id"])
+    except Exception:
+        tmpdir.cleanup()
+        raise
+    else:
+        return response
+
+
+def copy_files(srcdir, files, dstdir):
+    """Copy files from srcdir to dstdir, ensuring dirs are created."""
+    for f in files:
+        src = srcdir / f
+        dst = dstdir / f
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(src, dst)
+
+
+def get_files(path):
+    """List all files in a directory recursively as a flat list.
+
+    Sorted, and does not include directory entries.
+    """
+    return list(sorted([p.relative_to(path) for p in path.glob("**/*") if p.is_file()]))

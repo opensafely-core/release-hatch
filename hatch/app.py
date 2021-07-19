@@ -1,10 +1,10 @@
 import aiofiles
-from fastapi import Depends, FastAPI, HTTPException, Security
+from fastapi import Depends, FastAPI, Header, HTTPException, Security
 from fastapi.responses import FileResponse
 from fastapi.security.api_key import APIKeyHeader
+from pydantic import Required
 
-from hatch import config
-from hatch.models import FilesIndex
+from hatch import config, models
 
 
 api_key_header = APIKeyHeader(name="Authorization")
@@ -20,8 +20,7 @@ app = FastAPI(dependencies=[Depends(validate)])
 
 @app.get(
     "/workspace/{workspace}",
-    response_model=FilesIndex,
-    dependencies=[Depends(validate)],
+    response_model=models.FilesIndex,
 )
 def workspace_index(workspace: str):
     """Return an index of the files on disk in this workspace."""
@@ -30,7 +29,7 @@ def workspace_index(workspace: str):
     if not path.exists():
         raise HTTPException(404, f"Workspace {workspace} not found")
 
-    return FilesIndex.from_dir(path, f"/workspace/{workspace}/")
+    return models.FilesIndex.from_dir(path, f"/workspace/{workspace}/")
 
 
 @app.get("/workspace/{workspace}/{name:path}")
@@ -46,3 +45,24 @@ async def workspace_file(workspace: str, name: str):
 
     # FastAPI supports async file responses
     return FileResponse(path)
+
+
+@app.post("/workspace/{workspace}")
+def workspace_release(
+    workspace: str,
+    release: models.Release,
+    os_user: str = Header(Required),
+):
+    """Create a Release locally and in job-server."""
+
+    workspace_dir = config.WORKSPACES / workspace
+    if not workspace_dir.exists():
+        raise HTTPException(404, f"Workspace {workspace} not found")
+
+    errors = models.validate_release(workspace, workspace_dir, release)
+    if errors:
+        raise HTTPException(400, errors)
+
+    response = models.create_release(workspace, workspace_dir, release, os_user)
+    # forward job-servers response back to client
+    return response

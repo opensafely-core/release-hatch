@@ -1,7 +1,10 @@
 import hashlib
 import time
 
-from hatch import models
+import pytest
+from fastapi import HTTPException
+
+from hatch import config, models
 
 
 def test_get_sha_caches_sha(workspace):
@@ -69,3 +72,78 @@ def test_fileindex_from_dir(workspace):
     assert index.files[1].url == "/url/output/file2.txt"
     assert index.files[1].size == 5
     assert index.files[1].sha256 == hashlib.sha256(b"test2").hexdigest()
+
+
+def test_validate_release_errors(workspace):
+    workspace.write("output/file.txt", "test")
+
+    release = models.Release(
+        files={
+            "badfile": hashlib.sha256(b"test").hexdigest(),
+            "output/file.txt": "badsha",
+        }
+    )
+    assert models.validate_release("workspace", workspace.path, release) == [
+        "File badfile not found in workspace workspace",
+        "File output/file.txt does not match sha of 'badsha'",
+    ]
+
+
+def test_validate_release_valid(workspace):
+    workspace.write("output/file.txt", "test")
+
+    release = models.Release(
+        files={
+            "output/file.txt": hashlib.sha256(b"test").hexdigest(),
+        }
+    )
+    assert models.validate_release("workspace", workspace.path, release) == []
+
+
+def test_create_release(workspace, httpx_mock):
+    httpx_mock.add_response(
+        url=config.API_SERVER + "/api/v2/releases/workspace/workspace",
+        method="POST",
+        status_code=201,
+        headers={"Location": "https://url", "Release-Id": "id"},
+    )
+
+    workspace.write("output/file.txt", "test")
+
+    release = models.Release(
+        files={"output/file.txt": hashlib.sha256(b"test").hexdigest()}
+    )
+
+    response = models.create_release("workspace", workspace.path, release, "user")
+    assert response.headers["Location"] == "https://url"
+    release_id = response.headers["Release-Id"]
+    assert release_id == "id"
+
+    release_dir = config.RELEASES / release_id
+    assert release_dir.exists()
+
+    for f in models.get_files(release_dir):
+        copy = release_dir / f
+        orig = workspace.path / f
+        assert models.get_sha(copy) == models.get_sha(orig)
+
+
+def test_create_release_error(workspace, httpx_mock):
+    httpx_mock.add_response(
+        url=config.API_SERVER + "/api/v2/releases/workspace/workspace",
+        method="POST",
+        status_code=400,
+        json={"detail": "error"},
+    )
+
+    workspace.write("output/file.txt", "test")
+
+    release = models.Release(
+        files={"output/file.txt": hashlib.sha256(b"test").hexdigest()}
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        models.create_release("workspace", workspace.path, release, "user")
+
+    response = exc_info.value
+    assert response.detail == "error"
