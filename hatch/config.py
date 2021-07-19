@@ -14,3 +14,6 @@ if CACHE is None:
 else:  # pragma: no cover
     CACHE = Path(CACHE)
     assert CACHE.exists()
+
+BACKEND_TOKEN = os.environ.get("BACKEND_TOKEN")
+assert BACKEND_TOKEN

@@ -1,9 +1,13 @@
+import os
 from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
 
-import hatch.config
+
+# set a testing secret
+os.environ["BACKEND_TOKEN"] = "secret"
+import hatch.config  # noqa: E402
 
 
 @dataclass
