@@ -4,7 +4,7 @@ import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
-from hatch import app
+from hatch import app, config, models
 
 
 client = TestClient(app.app)
@@ -64,3 +64,54 @@ def test_file_api(workspace):
     )
     assert response.status_code == 200
     assert response.content == b"test"
+
+
+def test_workspace_release_no_user():
+    response = client.post("/workspace/bad", headers={"Authorization": "secret"})
+    assert response.status_code == 422
+
+
+def test_workspace_release_workspace_not_exists():
+    response = client.post(
+        "/workspace/notexists",
+        json=models.Release(files={}).dict(),
+        headers={"Authorization": "secret", "OS-user": "user"},
+    )
+    assert response.status_code == 404
+
+
+def test_workspace_release_workspace_bad_sha(workspace):
+    workspace.write("output/file1.txt", "test1")
+
+    release = models.Release(files={"output/file1.txt": "badhash"})
+
+    response = client.post(
+        "/workspace/workspace",
+        json=release.dict(),
+        headers={"Authorization": "secret", "OS-user": "user"},
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == [
+        "File output/file1.txt does not match sha of 'badhash'"
+    ]
+
+
+def test_workspace_release_success(workspace, httpx_mock):
+    httpx_mock.add_response(
+        url=config.API_SERVER + "/api/v2/releases/workspace/workspace",
+        method="POST",
+        status_code=201,
+        headers={"Location": "https://url", "Release-Id": "id"},
+    )
+    workspace.write("output/file.txt", "test")
+
+    release = models.Release(
+        files={"output/file.txt": hashlib.sha256(b"test").hexdigest()}
+    )
+
+    response = client.post(
+        "/workspace/workspace",
+        json=release.dict(),
+        headers={"Authorization": "secret", "OS-user": "user"},
+    )
+    assert response.status_code == 201
