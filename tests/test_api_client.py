@@ -4,7 +4,7 @@ import httpx
 import pytest
 from fastapi import HTTPException
 
-from hatch import api_client, config, models
+from hatch import api_client, config, schema
 
 
 def test_create_release(httpx_mock):
@@ -20,7 +20,7 @@ def test_create_release(httpx_mock):
         },
     )
 
-    release = models.Release(files={"file.txt": "sha"})
+    release = schema.Release(files={"file.txt": "sha"})
 
     response = api_client.create_release("workspace", release, "user")
 
@@ -52,7 +52,7 @@ def test_create_release_error(httpx_mock):
         },
     )
 
-    release = models.Release(files={"file.txt": "sha"})
+    release = schema.Release(files={"file.txt": "sha"})
 
     with pytest.raises(HTTPException) as exc_info:
         api_client.create_release("workspace", release, "user")

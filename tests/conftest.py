@@ -1,14 +1,18 @@
 import os
+import secrets
 from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
 
 
-# set a testing secret
-os.environ["BACKEND_TOKEN"] = "secret"
+# force testing config
+os.environ["BACKEND_TOKEN"] = secrets.token_hex(32)
 os.environ["SERVER_HOST"] = "http://testserver"
-import hatch.config  # noqa: E402
+from hatch import config, signing  # noqa: E402
+
+
+signing.set_default_key(config.BACKEND_TOKEN, config.BACKEND)
 
 
 @dataclass
@@ -32,7 +36,7 @@ def workspace(tmp_path, monkeypatch):
     workspace.mkdir()
     cache.mkdir()
     releases.mkdir()
-    monkeypatch.setattr(hatch.config, "WORKSPACES", tmp_path)
-    monkeypatch.setattr(hatch.config, "CACHE", cache)
-    monkeypatch.setattr(hatch.config, "RELEASES", releases)
+    monkeypatch.setattr(config, "WORKSPACES", tmp_path)
+    monkeypatch.setattr(config, "CACHE", cache)
+    monkeypatch.setattr(config, "RELEASES", releases)
     return Workspace(workspace, cache, tmp_path)

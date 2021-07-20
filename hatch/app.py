@@ -1,39 +1,49 @@
 import aiofiles
-from fastapi import Depends, FastAPI, Header, HTTPException, Security
+from fastapi import Depends, FastAPI, HTTPException, Security
 from fastapi.responses import FileResponse
 from fastapi.security.api_key import APIKeyHeader
-from pydantic import Required
+from pydantic import ValidationError
+from starlette.requests import Request
 
-from hatch import config, models
+from hatch import config, models, schema
+from hatch.signing import AuthToken, set_default_key
 
 
+app = FastAPI()
+# set key to use in signing
+set_default_key(config.BACKEND_TOKEN, config.BACKEND)
 api_key_header = APIKeyHeader(name="Authorization")
 
 
-def validate(auth_token: str = Security(api_key_header)):
-    if auth_token != config.BACKEND_TOKEN:
+def validate(request: Request, auth_token: str = Security(api_key_header)):
+    try:
+        token = AuthToken.verify(auth_token)
+    except ValidationError:
         raise HTTPException(403, "Unauthorised")
 
+    if not str(request.url).startswith(token.url):
+        raise HTTPException(403, "Unauthorised")
 
-app = FastAPI(dependencies=[Depends(validate)])
+    return token
 
 
-@app.get(
-    "/workspace/{workspace}",
-    response_model=models.FilesIndex,
-)
-def workspace_index(workspace: str):
+@app.get("/workspace/{workspace}", response_model=schema.IndexSchema)
+def workspace_index(
+    workspace: str, request: Request, token: AuthToken = Depends(validate)
+):
     """Return an index of the files on disk in this workspace."""
     path = config.WORKSPACES / workspace
 
     if not path.exists():
         raise HTTPException(404, f"Workspace {workspace} not found")
 
-    return models.FilesIndex.from_dir(path, f"/workspace/{workspace}/")
+    return models.get_index(path, request.url.path + "/")
 
 
 @app.get("/workspace/{workspace}/{name:path}")
-async def workspace_file(workspace: str, name: str):
+async def workspace_file(
+    workspace: str, name: str, token: AuthToken = Depends(validate)
+):
     """Return the contents of a file in this workspace.
 
     Note: this API is async, to serve files efficiently."""
@@ -50,8 +60,8 @@ async def workspace_file(workspace: str, name: str):
 @app.post("/workspace/{workspace}")
 def workspace_release(
     workspace: str,
-    release: models.Release,
-    os_user: str = Header(Required),
+    release: schema.Release,
+    token: AuthToken = Depends(validate),
 ):
     """Create a Release locally and in job-server."""
 
@@ -63,6 +73,6 @@ def workspace_release(
     if errors:
         raise HTTPException(400, errors)
 
-    response = models.create_release(workspace, workspace_dir, release, os_user)
+    response = models.create_release(workspace, workspace_dir, release, token.user)
     # forward job-servers response back to client
     return response

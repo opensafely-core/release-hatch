@@ -4,7 +4,7 @@ import time
 import pytest
 from fastapi import HTTPException
 
-from hatch import config, models
+from hatch import config, models, schema
 
 
 def test_get_sha_caches_sha(workspace):
@@ -48,21 +48,11 @@ def test_get_sha_stale_cache(workspace):
     assert (workspace.cache / "workspace/file.txt").read_text() == expected_sha
 
 
-def test_filemetadata_from_path(workspace):
-    workspace.write("output/file.txt", "test")
-    meta = models.FileMetadata.from_path(workspace.path, "output/file.txt", "/url/")
-
-    assert meta.name == "output/file.txt"
-    assert meta.url == "/url/output/file.txt"
-    assert meta.size == 4
-    assert meta.sha256 == hashlib.sha256(b"test").hexdigest()
-
-
-def test_fileindex_from_dir(workspace):
+def test_get_index(workspace):
     workspace.write("output/file1.txt", "test1")
     workspace.write("output/file2.txt", "test2")
 
-    index = models.FilesIndex.from_dir(workspace.path, "/url/")
+    index = models.get_index(workspace.path, "/url/")
 
     assert index.files[0].name == "output/file1.txt"
     assert index.files[0].url == "/url/output/file1.txt"
@@ -77,7 +67,7 @@ def test_fileindex_from_dir(workspace):
 def test_validate_release_errors(workspace):
     workspace.write("output/file.txt", "test")
 
-    release = models.Release(
+    release = schema.Release(
         files={
             "badfile": hashlib.sha256(b"test").hexdigest(),
             "output/file.txt": "badsha",
@@ -92,7 +82,7 @@ def test_validate_release_errors(workspace):
 def test_validate_release_valid(workspace):
     workspace.write("output/file.txt", "test")
 
-    release = models.Release(
+    release = schema.Release(
         files={
             "output/file.txt": hashlib.sha256(b"test").hexdigest(),
         }
@@ -110,7 +100,7 @@ def test_create_release(workspace, httpx_mock):
 
     workspace.write("output/file.txt", "test")
 
-    release = models.Release(
+    release = schema.Release(
         files={"output/file.txt": hashlib.sha256(b"test").hexdigest()}
     )
 
@@ -138,7 +128,7 @@ def test_create_release_error(workspace, httpx_mock):
 
     workspace.write("output/file.txt", "test")
 
-    release = models.Release(
+    release = schema.Release(
         files={"output/file.txt": hashlib.sha256(b"test").hexdigest()}
     )
 
