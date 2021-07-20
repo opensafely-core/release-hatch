@@ -21,26 +21,35 @@ def validate(request: Request, auth_token: str = Security(api_key_header)):
     except ValidationError:
         raise HTTPException(403, "Unauthorised")
 
+    # We validate the full url prefix for 2 reasons:
+    # 1) Validating the FQDN prevents possibly use of this token in a different context
+    # 2) All urls start with /workspace/{workspace}/, so it effectively
+    #    constrains a token to a workspace
     if not str(request.url).startswith(token.url):
         raise HTTPException(403, "Unauthorised")
 
     return token
 
 
-@app.get("/workspace/{workspace}", response_model=schema.IndexSchema)
+def validate_workspace(workspace):
+    """Validate a workspace exists on disk."""
+    path = config.WORKSPACES / workspace
+    if not path.exists():
+        raise HTTPException(404, f"Workspace {workspace} not found")
+
+    return path
+
+
+@app.get("/workspace/{workspace}/current/", response_model=schema.IndexSchema)
 def workspace_index(
     workspace: str, request: Request, token: AuthToken = Depends(validate)
 ):
     """Return an index of the files on disk in this workspace."""
-    path = config.WORKSPACES / workspace
-
-    if not path.exists():
-        raise HTTPException(404, f"Workspace {workspace} not found")
-
+    path = validate_workspace(workspace)
     return models.get_index(path, request.url.path + "/")
 
 
-@app.get("/workspace/{workspace}/{name:path}")
+@app.get("/workspace/{workspace}/current/{name:path}")
 async def workspace_file(
     workspace: str, name: str, token: AuthToken = Depends(validate)
 ):
@@ -57,7 +66,7 @@ async def workspace_file(
     return FileResponse(path)
 
 
-@app.post("/workspace/{workspace}")
+@app.post("/workspace/{workspace}/release")
 def workspace_release(
     workspace: str,
     release: schema.Release,
@@ -65,10 +74,10 @@ def workspace_release(
 ):
     """Create a Release locally and in job-server."""
 
-    workspace_dir = config.WORKSPACES / workspace
-    if not workspace_dir.exists():
-        raise HTTPException(404, f"Workspace {workspace} not found")
+    if token.scope not in ["release", "upload"]:
+        raise HTTPException(403, "Unauthorised")
 
+    workspace_dir = validate_workspace(workspace)
     errors = models.validate_release(workspace, workspace_dir, release)
     if errors:
         raise HTTPException(400, errors)

@@ -13,7 +13,7 @@ client = TestClient(app.app)
 
 def auth_token(path, user="user", expiry=None, scope="view"):
     if expiry is None:  # pragma: no cover
-        expiry = datetime.utcnow() + timedelta(hours=1)
+        expiry = datetime.now(timezone.utc) + timedelta(hours=1)
 
     return signing.AuthToken(
         url=urljoin(client.base_url, path),
@@ -23,14 +23,14 @@ def auth_token(path, user="user", expiry=None, scope="view"):
     )
 
 
-def auth_headers(path, user="user", expiry=None, scope="view"):
-    """Helper to create valid authentication headers."""
-    token = auth_token(path, user, expiry, scope)
+def auth_headers(workspace="workspace", user="user", expiry=None, scope="view"):
+    """Helper to create valid authentication headers for a specific workspace"""
+    token = auth_token(f"/workspace/{workspace}", user, expiry, scope)
     return {"Authorization": token.sign()}
 
 
 def test_validate_invalid_token():
-    url = "/workspace/workspace"
+    url = "/workspace/workspace/current"
     token = auth_token(url)
     # we can not easily call validate() directly, as fastapi's Request object
     # is very much not sans-io, and thus difficult just instantiate.
@@ -40,33 +40,33 @@ def test_validate_invalid_token():
 
 
 def test_validate_url():
-    headers = auth_headers("/workspace/workspace")
-    r1 = client.get("/workspace/workspace", headers=headers)
+    headers = auth_headers()
+    r1 = client.get("/workspace/workspace/current", headers=headers)
     # this means it was valid, but workspace did not exist
     assert r1.status_code == 404
 
     # test file url prefix
-    r2 = client.get("/workspace/workspace/output/file.txt", headers=headers)
-    # this means it was valid, but workspace did not exist
+    r2 = client.get("/workspace/workspace/current/output/file.txt", headers=headers)
+    # this means it was valid, but file did not exist
     assert r2.status_code == 404
 
-    # test file url workspace url
-    r3 = client.get("/workspace/other/output/file.txt", headers=headers)
+    r3 = client.get("/workspace/other/current/output/file.txt", headers=headers)
+    # the url and token url did not match
     assert r3.status_code == 403
 
 
 def test_index_api_bad_workspace():
-    url = "/workspace/bad"
-    response = client.get(url, headers=auth_headers(url))
-    assert response.status_code == 404
+    url = "/workspace/bad/current"
+    response = client.get(url, headers=auth_headers())
+    assert response.status_code == 403
 
 
 def test_index_api(workspace):
     workspace.write("output/file1.txt", "test1")
     workspace.write("output/file2.txt", "test2")
 
-    url = "/workspace/workspace"
-    response = client.get(url, headers=auth_headers(url))
+    url = "/workspace/workspace/current"
+    response = client.get(url, headers=auth_headers())
     assert response.status_code == 200
 
     def get_date(name):
@@ -78,7 +78,7 @@ def test_index_api(workspace):
         "files": [
             {
                 "name": "output/file1.txt",
-                "url": "/workspace/workspace/output/file1.txt",
+                "url": "/workspace/workspace/current/output/file1.txt",
                 "size": 5,
                 "sha256": hashlib.sha256(b"test1").hexdigest(),
                 "date": get_date("output/file1.txt"),
@@ -86,7 +86,7 @@ def test_index_api(workspace):
             },
             {
                 "name": "output/file2.txt",
-                "url": "/workspace/workspace/output/file2.txt",
+                "url": "/workspace/workspace/current/output/file2.txt",
                 "size": 5,
                 "sha256": hashlib.sha256(b"test2").hexdigest(),
                 "date": get_date("output/file2.txt"),
@@ -98,37 +98,43 @@ def test_index_api(workspace):
 
 def test_file_api_not_found(workspace):
     workspace.write("file.txt", "test")
-    url1 = "/workspace/bad/file.txt"
-    r1 = client.get(url1, headers=auth_headers(url1))
-    assert r1.status_code == 404
-
-    url2 = "/workspace/workspace/bad.txt"
-    r2 = client.get(url2, headers=auth_headers(url2))
-    assert r2.status_code == 404
+    url = "/workspace/workspace/current/bad.txt"
+    response = client.get(url, headers=auth_headers())
+    assert response.status_code == 404
 
 
 def test_file_api(workspace):
     workspace.write("output/file.txt", "test")
-    url = "/workspace/workspace/output/file.txt"
-    response = client.get(url, headers=auth_headers(url))
+    url = "/workspace/workspace/current/output/file.txt"
+    response = client.get(url, headers=auth_headers())
     assert response.status_code == 200
     assert response.content == b"test"
 
 
 def test_workspace_release_no_data():
-    url = "/workspace/workspace"
-    response = client.post(url, headers=auth_headers(url))
+    url = "/workspace/workspace/release"
+    response = client.post(url, headers=auth_headers(scope="release"))
     assert response.status_code == 422
 
 
 def test_workspace_release_workspace_not_exists():
-    url = "/workspace/notexists"
+    url = "/workspace/notexists/release"
     response = client.post(
         url,
         json=schema.Release(files={}).dict(),
-        headers=auth_headers(url),
+        headers=auth_headers(scope="release"),
     )
-    assert response.status_code == 404
+    assert response.status_code == 403
+
+
+def test_workspace_release_workspace_bad_scope():
+    url = "/workspace/workspace/release"
+    response = client.post(
+        url,
+        json=schema.Release(files={}).dict(),
+        headers=auth_headers(scope="view"),
+    )
+    assert response.status_code == 403
 
 
 def test_workspace_release_workspace_bad_sha(workspace):
@@ -136,11 +142,11 @@ def test_workspace_release_workspace_bad_sha(workspace):
 
     release = schema.Release(files={"output/file1.txt": "badhash"})
 
-    url = "/workspace/workspace"
+    url = "/workspace/workspace/release"
     response = client.post(
         url,
         json=release.dict(),
-        headers=auth_headers(url),
+        headers=auth_headers(scope="release"),
     )
     assert response.status_code == 400
     assert response.json()["detail"] == [
@@ -161,11 +167,11 @@ def test_workspace_release_success(workspace, httpx_mock):
         files={"output/file.txt": hashlib.sha256(b"test").hexdigest()}
     )
 
-    url = "/workspace/workspace"
+    url = "/workspace/workspace/release"
     response = client.post(
         url,
         json=release.dict(),
-        headers=auth_headers(url),
+        headers=auth_headers(scope="release"),
     )
 
     assert response.status_code == 201

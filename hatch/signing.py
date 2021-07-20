@@ -1,5 +1,5 @@
 import hashlib
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 
 import itsdangerous
@@ -57,13 +57,13 @@ class TokenScopes(str, Enum):
 
 
 class AuthToken(BaseModel):
-    """An signed auth token.
+    """A signed auth token.
 
     The signed format json serialized version this model, with a signature.
 
     This model includes all the logic needed to generate, sign, parse and
     validate a signed auth token. This is so that we can ensure that it is very
-    difficult create an invalid token by accident, and so in future we can
+    difficult to create an invalid token by accident, and so in future we can
     share one implementation of this token between projects.
     """
 
@@ -79,18 +79,18 @@ class AuthToken(BaseModel):
         allow_mutation = False
 
     @validator("url")
-    def check_url(cls, v):
+    def check_url(cls, url):
         """Enforce that we need a fully qualified url."""
-        if v.startswith("http://") or v.startswith("https://"):
-            return v
-        raise ValueError(f"Invalid url {v}")
+        if url.startswith(("http://", "https://")):
+            return url
+        raise ValueError(f"Invalid url {url}")
 
     @validator("expiry")
-    def check_expiry(cls, v):
+    def check_expiry(cls, expiry):
         """Enforce the token has not expired."""
-        if datetime.utcnow() > v:
-            raise ValueError(f"token expired on {v.isoformat()}")
-        return v
+        if datetime.now(timezone.utc) > expiry:
+            raise ValueError(f"token expired on {expiry.isoformat()}")
+        return expiry
 
     def sign(self, signer=None):
         if signer is None:

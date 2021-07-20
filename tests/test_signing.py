@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import itsdangerous
 import pytest
@@ -11,7 +11,7 @@ def test_token_sign_verify_roundtrip():
     token1 = signing.AuthToken(
         url="https://example.com/url",
         user="user",
-        expiry=datetime.utcnow() + timedelta(minutes=1),
+        expiry=datetime.now(timezone.utc) + timedelta(minutes=1),
         scope="view",
     )
     token_string = token1.sign()
@@ -25,8 +25,8 @@ def test_token_url_invalid():
         signing.AuthToken(
             url="bad",
             user="user",
-            expiry=datetime.utcnow() + timedelta(minutes=1),
-            scope="bad scope",
+            expiry=datetime.now(timezone.utc) + timedelta(minutes=1),
+            scope="view",
         )
 
 
@@ -35,7 +35,7 @@ def test_token_scope_invalid():
         signing.AuthToken(
             url="https://example.com/url",
             user="user",
-            expiry=datetime.utcnow() + timedelta(minutes=1),
+            expiry=datetime.now(timezone.utc) + timedelta(minutes=1),
             scope="bad scope",
         )
 
@@ -45,7 +45,7 @@ def test_token_expired():
         signing.AuthToken(
             url="https://example.com/url",
             user="user",
-            expiry=datetime.utcnow() - timedelta(minutes=1),
+            expiry=datetime.now(timezone.utc) - timedelta(minutes=1),
             scope="view",
         )
 
@@ -54,7 +54,7 @@ def test_token_mismatched_secrets():
     token = signing.AuthToken(
         url="https://example.com/url",
         user="user",
-        expiry=datetime.utcnow() + timedelta(minutes=1),
+        expiry=datetime.now(timezone.utc) + timedelta(minutes=1),
         scope="view",
     )
     token_string = token.sign()
@@ -65,7 +65,7 @@ def test_token_mismatched_secrets():
 
 
 def test_token_bad_payload():
-    payload = "bad payload"
+    payload = "not a json object"
     signer = signing.get_default_signer()
     token_string = signer.sign(payload)
     with pytest.raises(ValidationError):
