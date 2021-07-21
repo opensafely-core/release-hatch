@@ -2,12 +2,12 @@ import hashlib
 import os
 import shutil
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List
-
-from pydantic import BaseModel
+from urllib.parse import urljoin
 
 from hatch import api_client, config
+from hatch.schema import FileSchema, IndexSchema
 
 
 def get_sha(path):
@@ -38,47 +38,30 @@ def get_sha(path):
     return sha
 
 
-class FileMetadata(BaseModel):
-    """Metadata for a workspace file."""
+def get_files(path):
+    """List all files in a directory recursively as a flat list.
 
-    name: str
-    url: str
-    size: int
-    sha256: str
+    Sorted, and does not include directory entries.
+    """
+    return list(sorted([p.relative_to(path) for p in path.glob("**/*") if p.is_file()]))
 
-    @classmethod
-    def from_path(cls, directory, name, urlbase):
-        assert urlbase.endswith("/")
-        abspath = directory / name
-        return cls(
-            name=str(name),
-            url=urlbase + f"{name}",
-            size=abspath.stat().st_size,
-            sha256=get_sha(abspath),
+
+def get_index(path, urlbase):
+    files = []
+    for name in get_files(path):
+        abspath = path / name
+        stat = abspath.stat()
+        date = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat()
+        files.append(
+            FileSchema(
+                name=str(name),
+                url=urljoin(urlbase, str(name)),
+                size=stat.st_size,
+                sha256=get_sha(abspath),
+                date=date,
+            )
         )
-
-
-class FilesIndex(BaseModel):
-    """An index of files in a workspace.
-
-    This must match the json format that the SPA's client API expects.
-    """
-
-    files: List[FileMetadata]
-
-    @classmethod
-    def from_dir(cls, path, url):
-        paths = get_files(path)
-        return cls(files=[FileMetadata.from_path(path, p, url) for p in paths])
-
-
-class Release(BaseModel):
-    """Request a release.
-
-    This is exactly the same API payload as job-server.
-    """
-
-    files: Dict[str, str]
+    return IndexSchema(files=files)
 
 
 def validate_release(workspace, workspace_dir, release):
@@ -129,11 +112,3 @@ def copy_files(srcdir, files, dstdir):
         dst = dstdir / f
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(src, dst)
-
-
-def get_files(path):
-    """List all files in a directory recursively as a flat list.
-
-    Sorted, and does not include directory entries.
-    """
-    return list(sorted([p.relative_to(path) for p in path.glob("**/*") if p.is_file()]))

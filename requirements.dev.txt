@@ -174,6 +174,12 @@ isort==5.9.2 \
     --hash=sha256:eed17b53c3e7912425579853d078a0832820f023191561fcee9d7cae424e0813 \
     --hash=sha256:f65ce5bd4cbc6abdfbe29afc2f0245538ab358c14590912df638033f157d555e
     # via -r requirements.dev.in
+itsdangerous==2.0.1 \
+    --hash=sha256:5174094b9637652bdb841a3029700391451bd092ba3db90600dea710ba28e97c \
+    --hash=sha256:9e724d68fc22902a1435351f84c3fb8623f303fffcc566a4cb952df8c572cff0
+    # via
+    #   -c requirements.prod.in
+    #   -r requirements.prod.in
 mccabe==0.6.1 \
     --hash=sha256:ab8a6258860da4b6677da4bd2fe5dc2c659cff31b3ee4f7f5d64e79735b80d42 \
     --hash=sha256:dd8d182285a0fe56bace7f45b5e7d1a6ebcbf524e8f3bd87eb0f125271b8831f

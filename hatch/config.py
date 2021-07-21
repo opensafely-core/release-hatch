@@ -27,6 +27,7 @@ else:  # pragma: no cover
 
 BACKEND_TOKEN = os.environ.get("BACKEND_TOKEN")
 assert BACKEND_TOKEN
+BACKEND = os.environ.get("BACKEND", "test-backend")
 
 API_SERVER = os.environ.get("API_SERVER", "https://jobs.opensafely.org")
 SERVER_HOST = os.environ.get("SERVER_HOST")

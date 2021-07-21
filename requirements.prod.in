@@ -6,3 +6,4 @@ uvicorn
 fastapi
 httpx
 aiofiles
+itsdangerous
