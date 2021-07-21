@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 
 from hatch import app, config, schema, signing
 from tests.factories import WorkspaceFactory
+from tests.test_signing import create_raw_token
 
 
 client = TestClient(app.app)
@@ -45,12 +46,37 @@ def test_cors():
 
 def test_validate_invalid_token():
     url = "/workspace/workspace/current"
-    token = auth_token(url)
+    signer = itsdangerous.Signer("badsecret")
+    token = create_raw_token(
+        dict(
+            url=urljoin(client.base_url, "/workspace/workspace"),
+            user="user",
+            expiry=datetime.now(timezone.utc) + timedelta(hours=1),
+            scope="view",
+        ),
+        signer=signer,
+    )
+
     # we can not easily call validate() directly, as fastapi's Request object
     # is very much not sans-io, and thus difficult just instantiate.
-    serializer = itsdangerous.Signer("badsecret")
-    response = client.get(url, headers={"Authorization": token.sign(serializer)})
+    response = client.get(url, headers={"Authorization": token})
+
     assert response.status_code == 403
+
+
+def test_validate_expired_token():
+    url = "/workspace/workspace/current"
+    # valid except for expiry
+    token = create_raw_token(
+        dict(
+            url=urljoin(client.base_url, "/workspace/workspace"),
+            user="user",
+            expiry=datetime.now(timezone.utc) - timedelta(hours=1),
+            scope="view",
+        )
+    )
+    response = client.get(url, headers={"Authorization": token})
+    assert response.status_code == 401
 
 
 def test_validate_url():
@@ -225,7 +251,6 @@ def test_release_index_api(release):
     url = f"/workspace/workspace/release/{release.id}"
     response = client.get(url, headers=auth_headers())
     assert response.status_code == 200
-
     assert response.json() == {
         "files": [
             {
@@ -273,3 +298,7 @@ def test_release_file_api(release):
     response = client.get(url, headers=auth_headers())
     assert response.status_code == 200
     assert response.content == b"test"
+    assert (
+        response.headers["Content-Security-Policy"]
+        == f"frame-src: {config.API_SERVER};"
+    )

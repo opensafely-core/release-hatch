@@ -37,15 +37,17 @@ api_key_header = APIKeyHeader(name="Authorization")
 def validate(request: Request, auth_token: str = Security(api_key_header)):
     try:
         token = AuthToken.verify(auth_token)
+    except AuthToken.Expired:
+        raise HTTPException(401, "Unauthorized")
     except ValidationError:
-        raise HTTPException(403, "Unauthorised")
+        raise HTTPException(403, "Forbidden")
 
     # We validate the full url prefix for 2 reasons:
     # 1) Validating the FQDN prevents possibly use of this token in a different context
     # 2) All urls start with /workspace/{workspace}/, so it effectively
     #    constrains a token to a workspace
     if not str(request.url).startswith(token.url):
-        raise HTTPException(403, "Unauthorised")
+        raise HTTPException(403, "Forbidden")
 
     return token
 
@@ -111,7 +113,7 @@ def workspace_release(
     """Create a Release locally and in job-server."""
 
     if token.scope not in ["release", "upload"]:
-        raise HTTPException(403, "Unauthorised")
+        raise HTTPException(403, "Forbidden")
 
     workspace_dir = validate_workspace(workspace)
     errors = models.validate_release(workspace, workspace_dir, release)
@@ -147,4 +149,6 @@ async def release_file(
     if not await aioexists(path):
         raise HTTPException(404, f"File {name} not found in release {release_id}")
 
-    return FileResponse(path)
+    return FileResponse(
+        path, headers={"Content-Security-Policy": f"frame-src: {config.API_SERVER};"}
+    )
