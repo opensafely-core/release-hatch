@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from enum import Enum
 
 import itsdangerous
-from pydantic import BaseModel, Field, ValidationError, validator
+from pydantic import BaseModel, Field, ValidationError, root_validator, validator
 
 
 _signer = None
@@ -78,6 +78,9 @@ class AuthToken(BaseModel):
         # do not allow anyone to set values after instantiation
         allow_mutation = False
 
+    class Expired(Exception):
+        pass
+
     @validator("url")
     def check_url(cls, url):
         """Enforce that we need a fully qualified url."""
@@ -92,15 +95,25 @@ class AuthToken(BaseModel):
             raise ValueError(f"token expired on {expiry.isoformat()}")
         return expiry
 
+    @root_validator
+    def validate_all(cls, values):
+        """If only invalid field is 'expiry',  raise a different exception."""
+        # values dict contains all fields that have been validated.
+        if "expiry" in values:
+            return values
+        if all(k in values for k in ["url", "user", "scope"]):
+            raise cls.Expired()
+        return values
+
     def sign(self, signer=None):
-        if signer is None:
+        if signer is None:  # pragma: no cover
             signer = get_default_signer()
         # serialize to json with pydantic, which handles datetimes by default
         return signer.sign(self.json()).decode("utf8")
 
     @classmethod
     def verify(cls, token_string, signer=None):
-        if signer is None:
+        if signer is None:  # pragma: no cover
             signer = get_default_signer()
         try:
             payload = signer.unsign(token_string)
