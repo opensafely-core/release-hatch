@@ -1,5 +1,6 @@
 import aiofiles
 from fastapi import Depends, FastAPI, HTTPException, Security
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.security.api_key import APIKeyHeader
 from pydantic import ValidationError
@@ -10,6 +11,24 @@ from hatch.signing import AuthToken, set_default_key
 
 
 app = FastAPI()
+
+
+# Allow SPA to access these files
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[config.API_SERVER],
+    # credentials here is cookies, we don't use them
+    allow_credentials=False,
+    # allow caching for 1 hour
+    max_age=3200,
+    allow_methods=["GET", "HEAD", "POST"],
+    # allow browser JS to set Authorization header
+    allow_headers=["Authorization"],
+    # ensure JS can read our custom headers
+    expose_headers=["Response-Id", "File-Id"],
+)
+
+
 # set key to use in signing
 set_default_key(config.BACKEND_TOKEN, config.BACKEND)
 api_key_header = APIKeyHeader(name="Authorization")
@@ -63,7 +82,9 @@ async def workspace_file(
         raise HTTPException(404, f"File {name} not found in workspace {workspace}")
 
     # FastAPI supports async file responses
-    return FileResponse(path)
+    return FileResponse(
+        path, headers={"Content-Security-Policy": f"frame-src: {config.API_SERVER};"}
+    )
 
 
 @app.post("/workspace/{workspace}/release")
