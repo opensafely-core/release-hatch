@@ -50,6 +50,21 @@ update TARGET="prod":
     pip-compile --generate-hashes --output-file=requirements.{{ TARGET }}.txt requirements.{{ TARGET }}.in
     pip install -r requirements.{{ TARGET }}.txt
 
+
 # Run the dev project
 run:
-    echo "Not implemented yet"
+    #!/usr/bin/env bash
+    set -euo pipefail
+    . scripts/setup_functions
+    dev_setup
+    port=$(echo $SERVER_HOST | awk -F: '{print $3}' | tr -d / )
+    host=$(echo $SERVER_HOST | awk -F[:/] '{print $4}')
+    uvicorn hatch.app:app --reload --port $port --host $host
+
+
+token WORKSPACE="workspace":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    . scripts/setup_functions
+    dev_setup
+    python dev-token.py "{{ WORKSPACE }}"

@@ -12,7 +12,10 @@ exclude = '''
 
 [tool.coverage.run]
 branch = true
-omit = [".venv/*"]
+omit = [
+   ".venv/*",
+   "dev-token.py",
+]
 
 [tool.coverage.report]
 fail_under = 100

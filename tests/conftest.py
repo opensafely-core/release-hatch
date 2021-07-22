@@ -7,13 +7,14 @@ import pytest
 # force testing config
 os.environ["BACKEND_TOKEN"] = secrets.token_hex(32)
 os.environ["SERVER_HOST"] = "http://testserver"
+os.environ["API_SERVER"] = "https://jobs.opensafely.org"
 
 # now we can import hatch stuff
 from hatch import config, signing  # noqa: E402
 from tests import factories  # noqa: E402
 
 
-signing.set_default_key(config.BACKEND_TOKEN, config.BACKEND)
+signing.set_default_key(config.BACKEND_TOKEN, salt="hatch")
 
 
 @pytest.fixture(autouse=True)

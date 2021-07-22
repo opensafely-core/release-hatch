@@ -7,7 +7,7 @@ from pydantic import ValidationError
 from starlette.requests import Request
 
 from hatch import config, models, schema
-from hatch.signing import AuthToken, set_default_key
+from hatch.signing import AuthToken
 
 
 app = FastAPI()
@@ -29,8 +29,6 @@ app.add_middleware(
 )
 
 
-# set key to use in signing
-set_default_key(config.BACKEND_TOKEN, config.BACKEND)
 api_key_header = APIKeyHeader(name="Authorization")
 
 
