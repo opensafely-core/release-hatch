@@ -29,6 +29,20 @@ def auth_headers(workspace="workspace", user="user", expiry=None, scope="view"):
     return {"Authorization": token.sign()}
 
 
+def test_cors():
+    response = client.options(
+        "/workspace/workspace/current",
+        headers={
+            "Origin": config.API_SERVER,
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    assert response.headers["Access-Control-Allow-Methods"] == "GET, HEAD, POST"
+    assert response.headers["Access-Control-Allow-Origin"] == config.API_SERVER
+    assert response.headers["Access-Control-Max-Age"] == "3200"
+    assert "Authorization" in response.headers["access-control-allow-headers"]
+
+
 def test_validate_invalid_token():
     url = "/workspace/workspace/current"
     token = auth_token(url)
@@ -109,6 +123,10 @@ def test_file_api(workspace):
     response = client.get(url, headers=auth_headers())
     assert response.status_code == 200
     assert response.content == b"test"
+    assert (
+        response.headers["Content-Security-Policy"]
+        == f"frame-src: {config.API_SERVER};"
+    )
 
 
 def test_workspace_release_no_data():
