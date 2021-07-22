@@ -152,3 +152,22 @@ async def release_file(
     return FileResponse(
         path, headers={"Content-Security-Policy": f"frame-src: {config.API_SERVER};"}
     )
+
+
+@app.post("/workspace/{workspace}/release/{release_id}/{name:path}")
+def release_file_upload(
+    workspace: str, release_id: str, name: str, token: AuthToken = Depends(validate)
+):
+    """Upload a file from a release to job-server."""
+    if token.scope != "upload":
+        raise HTTPException(403, "Forbidden")
+
+    workspace_dir = validate_workspace(workspace)
+    release_dir = validate_release(workspace_dir, release_id)
+    path = release_dir / name
+    if not path.exists():
+        raise HTTPException(404, f"File {name} not found in release {release_id}")
+
+    response = models.upload_file(release_id, name, path, token.user)
+    # forward job-servers response back to client
+    return response

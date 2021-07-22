@@ -11,11 +11,35 @@ client = httpx.Client(
 
 
 def create_release(workspace, release, user):
-    """API call to job server to create a release."""
+    """API call to job server to create a release.
+
+    We return job server's response, but mapped from httpx to a fastapi
+    response object, so we can send it straight to the client.
+    """
     response = client.post(
         url=f"/api/v2/releases/workspace/{workspace}",
         content=release.json(),
         headers={"OS-User": user},
+    )
+    if response.status_code != 201:
+        raise proxy_httpx_error(response)
+
+    return proxy_httpx_response(response)
+
+
+def upload_file(release_id, name, path, user):
+    """Upload file to job server.
+
+    We return job server's response, but mapped from httpx to a fastapi
+    response object, so we can send it straight to the client.
+    """
+    response = client.post(
+        url=f"/api/v2/releases/release/{release_id}",
+        content=path.read_bytes(),
+        headers={
+            "OS-User": user,
+            "Content-Disposition": f"attachment; filename={name}",
+        },
     )
     if response.status_code != 201:
         raise proxy_httpx_error(response)
