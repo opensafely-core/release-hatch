@@ -1,4 +1,3 @@
-import hashlib
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urljoin
 
@@ -6,6 +5,7 @@ import itsdangerous
 from fastapi.testclient import TestClient
 
 from hatch import app, config, schema, signing
+from tests.factories import WorkspaceFactory
 
 
 client = TestClient(app.app)
@@ -83,27 +83,22 @@ def test_index_api(workspace):
     response = client.get(url, headers=auth_headers())
     assert response.status_code == 200
 
-    def get_date(name):
-        path = workspace.path / name
-        stat = path.stat()
-        return datetime.fromtimestamp(stat.st_mtime, timezone.utc).isoformat()
-
     assert response.json() == {
         "files": [
             {
                 "name": "output/file1.txt",
                 "url": "/workspace/workspace/current/output/file1.txt",
                 "size": 5,
-                "sha256": hashlib.sha256(b"test1").hexdigest(),
-                "date": get_date("output/file1.txt"),
+                "sha256": workspace.get_sha("output/file1.txt"),
+                "date": workspace.get_date("output/file1.txt"),
                 "user": None,
             },
             {
                 "name": "output/file2.txt",
                 "url": "/workspace/workspace/current/output/file2.txt",
                 "size": 5,
-                "sha256": hashlib.sha256(b"test2").hexdigest(),
-                "date": get_date("output/file2.txt"),
+                "sha256": workspace.get_sha("output/file2.txt"),
+                "date": workspace.get_date("output/file2.txt"),
                 "user": None,
             },
         ]
@@ -182,7 +177,7 @@ def test_workspace_release_success(workspace, httpx_mock):
     workspace.write("output/file.txt", "test")
 
     release = schema.Release(
-        files={"output/file.txt": hashlib.sha256(b"test").hexdigest()}
+        files={"output/file.txt": workspace.get_sha("output/file.txt")}
     )
 
     url = "/workspace/workspace/release"
@@ -193,3 +188,88 @@ def test_workspace_release_success(workspace, httpx_mock):
     )
 
     assert response.status_code == 201
+
+
+def test_release_index_api_bad_workspace():
+    url = "/workspace/bad/release/id"
+    response = client.get(url, headers=auth_headers("bad"))
+    assert response.status_code == 404
+
+
+def test_release_index_api_bad_release():
+    url = "/workspace/workspace/release/id"
+    response = client.get(url, headers=auth_headers())
+    assert response.status_code == 404
+
+
+def test_release_cannot_access_different_workspaces_release(release):
+    # check we can access the release normally
+    response = client.get(
+        f"/workspace/workspace/release/{release.id}", headers=auth_headers()
+    )
+    assert response.status_code == 200
+
+    WorkspaceFactory("other")
+    # allow access to other workspace
+    headers = auth_headers("other")
+    # use above create to try access release from original workspace
+    url = f"/workspace/other/release/{release.id}"
+    response = client.get(url, headers=headers)
+    assert response.status_code == 404
+
+
+def test_release_index_api(release):
+    release.write("output/file1.txt", "test1")
+    release.write("output/file2.txt", "test2")
+
+    url = f"/workspace/workspace/release/{release.id}"
+    response = client.get(url, headers=auth_headers())
+    assert response.status_code == 200
+
+    assert response.json() == {
+        "files": [
+            {
+                "name": "output/file1.txt",
+                "url": f"/workspace/workspace/release/{release.id}/output/file1.txt",
+                "size": 5,
+                "sha256": release.get_sha("output/file1.txt"),
+                "date": release.get_date("output/file1.txt"),
+                "user": None,
+            },
+            {
+                "name": "output/file2.txt",
+                "url": f"/workspace/workspace/release/{release.id}/output/file2.txt",
+                "size": 5,
+                "sha256": release.get_sha("output/file2.txt"),
+                "date": release.get_date("output/file2.txt"),
+                "user": None,
+            },
+        ]
+    }
+
+
+def test_release_file_api_invalid_token_url():
+    url = "/workspace/workspace/release/id/bad.txt"
+    response = client.get(url, headers=auth_headers("other"))
+    assert response.status_code == 403
+
+
+def test_release_file_api_workspace_notfound(release):
+    release.write("output/file.txt", "test")
+    url = f"/workspace/bad/release/{release.id}/output/file.txt"
+    response = client.get(url, headers=auth_headers("bad"))
+    assert response.status_code == 404
+
+
+def test_release_file_api_not_found(release):
+    url = f"/workspace/workspace/release/{release.id}/bad.txt"
+    response = client.get(url, headers=auth_headers())
+    assert response.status_code == 404
+
+
+def test_release_file_api(release):
+    release.write("output/file.txt", "test")
+    url = f"/workspace/workspace/release/{release.id}/output/file.txt"
+    response = client.get(url, headers=auth_headers())
+    assert response.status_code == 200
+    assert response.content == b"test"

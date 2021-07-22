@@ -96,8 +96,11 @@ def create_release(workspace, workspace_dir, release, user):
         # tell job-server about the files
         response = api_client.create_release(workspace, release, user)
 
+        # copy file into releases subdir of workspace dir
+        workspace_release_dir = workspace_dir / "releases"
+        workspace_release_dir.mkdir(parents=True, exist_ok=True)
         # rename tempdir to match release id
-        os.rename(tmp, config.RELEASES / response.headers["Release-Id"])
+        os.rename(tmp, workspace_release_dir / response.headers["Release-Id"])
     except Exception:
         tmpdir.cleanup()
         raise

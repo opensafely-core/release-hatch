@@ -55,8 +55,25 @@ def validate_workspace(workspace):
     path = config.WORKSPACES / workspace
     if not path.exists():
         raise HTTPException(404, f"Workspace {workspace} not found")
-
     return path
+
+
+def validate_release(workspace_dir, release_id):
+    """Validate a Release exists on disk."""
+    path = workspace_dir / "releases" / release_id
+    if not path.exists():
+        raise HTTPException(404, f"Release {release_id} not found")
+    return path
+
+
+async def aioexists(path):
+    """async version for use in async file serving APIs."""
+    try:
+        await aiofiles.os.stat(str(path))
+    except FileNotFoundError:
+        return False
+    else:
+        return True
 
 
 @app.get("/workspace/{workspace}/current/", response_model=schema.IndexSchema)
@@ -76,9 +93,7 @@ async def workspace_file(
 
     Note: this API is async, to serve files efficiently."""
     path = config.WORKSPACES / workspace / name
-    try:
-        await aiofiles.os.stat(path)
-    except FileNotFoundError:
+    if not await aioexists(path):
         raise HTTPException(404, f"File {name} not found in workspace {workspace}")
 
     # FastAPI supports async file responses
@@ -106,3 +121,30 @@ def workspace_release(
     response = models.create_release(workspace, workspace_dir, release, token.user)
     # forward job-servers response back to client
     return response
+
+
+@app.get("/workspace/{workspace}/release/{release_id}")
+def release_index(
+    workspace: str,
+    release_id: str,
+    request: Request,
+    token: AuthToken = Depends(validate),
+):
+    """Index of files in a Release."""
+    workspace_dir = validate_workspace(workspace)
+    release_dir = validate_release(workspace_dir, release_id)
+    return models.get_index(release_dir, request.url.path + "/")
+
+
+@app.get("/workspace/{workspace}/release/{release_id}/{name:path}")
+async def release_file(
+    workspace: str, release_id: str, name: str, token: AuthToken = Depends(validate)
+):
+    """Return the contents of a file in this workspace.
+
+    Note: this API is async, to serve files efficiently."""
+    path = config.WORKSPACES / workspace / "releases" / release_id / name
+    if not await aioexists(path):
+        raise HTTPException(404, f"File {name} not found in release {release_id}")
+
+    return FileResponse(path)
