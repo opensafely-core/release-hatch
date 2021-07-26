@@ -114,9 +114,9 @@ distlib==0.3.2 \
     --hash=sha256:106fef6dc37dd8c0e2c0a60d3fca3e77460a48907f335fa28420463a6f799736 \
     --hash=sha256:23e223426b28491b1ced97dc3bbe183027419dfc7982b4fa2f05d5f3ff10711c
     # via virtualenv
-fastapi==0.66.0 \
-    --hash=sha256:6ea4225448786f3d6fae737713789f87631a7455f65580de0a4a2e50471060d9 \
-    --hash=sha256:85d8aee8c3c46171f4cb7bb3651425a42c07cb9183345d100ef55d88ca2ce15f
+fastapi==0.67.0 \
+    --hash=sha256:24f45d65e589db3bab162c02a1e2e8b798c098861b1fa3e266efeb71b4faa8e2 \
+    --hash=sha256:b05f5af77af3b21cab896b8dade8b383b2d2f254caae4681a56313e29196f1ac
     # via
     #   -c requirements.prod.in
     #   -r requirements.prod.in
