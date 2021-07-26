@@ -1,20 +1,15 @@
 # release-hatch
 
-This is a template for an OpenSAFELY Core repository.
+This provides a small API to authenicate and serve medium-privacy files in TRE
+environments, as well as handle requesting a Release and the reviewing and
+uploading.
 
-Put your project description here.
+It has no database, all state is derived from the directories and files found
+on disk.
 
-New repo checklist:
-- [ ] Does the repo require a Dockerfile?
-  If not, delete:
-  - Dockerfile -
-  - .dockerignore
-  - hadolint pre-commit hook from `.pre-commit-config.yaml`
-  - `lint-dockerfile` action from `.github/workflows/main.yml`
-- [ ] Update DEVELOPERS.md with any project-specific requirements and commands
-- [ ] Update commands in `justfile`
+It is authenticated via a token signed by the configured `BACKEND_TOKEN`, which
+is a shared key between job-server and all services for a backend, and it uses
+the same token to authenticate against the job-server to upload files.
 
 
-## Developer docs
-
-Please see the [additional information](DEVELOPERS.md).
+Please see the [additional information](DEVELOPERS.md) for developers.

@@ -102,4 +102,5 @@ htmlcov
 venv/
 
 # project ignores
-workspace/*
+workspaces/*
+.env
