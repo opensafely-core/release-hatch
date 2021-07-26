@@ -302,3 +302,49 @@ def test_release_file_api(release):
         response.headers["Content-Security-Policy"]
         == f"frame-src: {config.API_SERVER};"
     )
+
+
+def test_release_file_upload_bad_scope(release):
+    release.write("output/file.txt", "test")
+    url = f"/workspace/workspace/release/{release.id}/output/file.txt"
+    response = client.post(url, headers=auth_headers(scope="release"))
+    assert response.status_code == 403
+
+
+def test_release_file_upload_bad_workspace(release):
+    release.write("output/file.txt", "test")
+    url = f"/workspace/other/release/{release.id}/output/file.txt"
+    response = client.post(url, headers=auth_headers("other", scope="upload"))
+    assert response.status_code == 404
+
+
+def test_release_file_upload_bad_release(release):
+    release.write("output/file.txt", "test")
+    url = "/workspace/workspace/release/badid/output/file.txt"
+    response = client.post(url, headers=auth_headers(scope="upload"))
+    assert response.status_code == 404
+
+
+def test_release_file_upload_bad_file(release):
+    release.write("output/file.txt", "test")
+    url = f"/workspace/workspace/release/{release.id}/output/bad.txt"
+    response = client.post(url, headers=auth_headers(scope="upload"))
+    assert response.status_code == 404
+
+
+def test_release_file_upload(release, httpx_mock):
+    httpx_mock.add_response(
+        url=config.API_SERVER + f"/api/v2/releases/release/{release.id}",
+        method="POST",
+        status_code=201,
+        headers={"Location": "https://url", "File-Id": "id"},
+    )
+    release.write("output/file.txt", "test")
+
+    url = f"/workspace/workspace/release/{release.id}/output/file.txt"
+    response = client.post(
+        url,
+        headers=auth_headers(scope="upload"),
+    )
+
+    assert response.status_code == 201

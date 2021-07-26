@@ -115,3 +115,9 @@ def copy_files(srcdir, files, dstdir):
         dst = dstdir / f
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(src, dst)
+
+
+def upload_file(release_id, name, path, user):
+    """Upload a file to job-server."""
+    # this is really simple, there's nothing to except make the request
+    return api_client.upload_file(release_id, name, path, user)

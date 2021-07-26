@@ -30,10 +30,6 @@ def test_create_release(httpx_mock):
     assert "Server" not in response.headers
 
     request = httpx_mock.get_request()
-    assert (
-        str(request.url)
-        == "https://jobs.opensafely.org/api/v2/releases/workspace/workspace"
-    )
     assert request.headers["OS-User"] == "user"
     assert request.headers["Authorization"] == config.BACKEND_TOKEN
     assert json.loads(request.read()) == {"files": {"file.txt": "sha"}}
@@ -62,6 +58,49 @@ def test_create_release_error(httpx_mock):
     assert response.detail == "error"
     assert "Connection" not in response.headers
     assert "Server" not in response.headers
+
+
+def test_upload_file(httpx_mock, tmp_path):
+    httpx_mock.add_response(
+        url=config.API_SERVER + "/api/v2/releases/release/release_id",
+        method="POST",
+        status_code=201,
+        headers={
+            "Location": "https://url",
+            "File-Id": "file-id",
+        },
+    )
+
+    path = tmp_path / "file.txt"
+    path.write_text("test")
+    response = api_client.upload_file("release_id", "file.txt", path, "user")
+
+    assert response.headers["Location"] == "https://url"
+    assert response.headers["File-Id"] == "file-id"
+
+    request = httpx_mock.get_request()
+    assert request.headers["OS-User"] == "user"
+    assert request.headers["Authorization"] == config.BACKEND_TOKEN
+    assert request.headers["Content-Disposition"] == "attachment; filename=file.txt"
+    assert request.read() == b"test"
+
+
+def test_upload_file_error(httpx_mock, tmp_path):
+    httpx_mock.add_response(
+        url=config.API_SERVER + "/api/v2/releases/release/release_id",
+        method="POST",
+        status_code=400,
+        json={"detail": "error"},
+    )
+
+    path = tmp_path / "file.txt"
+    path.write_text("test")
+
+    with pytest.raises(HTTPException) as exc_info:
+        api_client.upload_file("release_id", "file.txt", path, "user")
+
+    response = exc_info.value
+    assert response.detail == "error"
 
 
 def test_proxy_httpx_error_bad_json(httpx_mock):
