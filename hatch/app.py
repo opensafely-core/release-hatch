@@ -34,7 +34,7 @@ api_key_header = APIKeyHeader(name="Authorization")
 
 def reverse_url(view_name, **kwargs):
     path = app.url_path_for(view_name, **kwargs)
-    return config.SERVER_HOST + path
+    return config.SERVER_HOST.rstrip("/") + path
 
 
 def validate(request: Request, auth_token: str = Security(api_key_header)):
