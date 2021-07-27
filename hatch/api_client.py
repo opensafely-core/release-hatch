@@ -19,7 +19,11 @@ def create_release(workspace, release, user):
     response = client.post(
         url=f"/api/v2/releases/workspace/{workspace}",
         content=release.json(),
-        headers={"OS-User": user},
+        headers={
+            "OS-User": user,
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        },
     )
     if response.status_code != 201:
         raise proxy_httpx_error(response)
@@ -38,7 +42,9 @@ def upload_file(release_id, name, path, user):
         content=path.read_bytes(),
         headers={
             "OS-User": user,
-            "Content-Disposition": f"attachment; filename={name}",
+            "Content-Disposition": f'attachment; filename="{name}"',
+            "Content-Type": "application/octet-stream",
+            "Accept": "application/json",
         },
     )
     if response.status_code != 201:

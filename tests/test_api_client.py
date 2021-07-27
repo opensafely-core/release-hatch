@@ -71,9 +71,10 @@ def test_upload_file(httpx_mock, tmp_path):
         },
     )
 
-    path = tmp_path / "file.txt"
+    path = tmp_path / "output/file.txt"
+    path.parent.mkdir()
     path.write_text("test")
-    response = api_client.upload_file("release_id", "file.txt", path, "user")
+    response = api_client.upload_file("release_id", "output/file.txt", path, "user")
 
     assert response.headers["Location"] == "https://url"
     assert response.headers["File-Id"] == "file-id"
@@ -81,7 +82,10 @@ def test_upload_file(httpx_mock, tmp_path):
     request = httpx_mock.get_request()
     assert request.headers["OS-User"] == "user"
     assert request.headers["Authorization"] == config.BACKEND_TOKEN
-    assert request.headers["Content-Disposition"] == "attachment; filename=file.txt"
+    assert (
+        request.headers["Content-Disposition"]
+        == 'attachment; filename="output/file.txt"'
+    )
     assert request.read() == b"test"
 
 
@@ -93,11 +97,12 @@ def test_upload_file_error(httpx_mock, tmp_path):
         json={"detail": "error"},
     )
 
-    path = tmp_path / "file.txt"
+    path = tmp_path / "output/file.txt"
+    path.parent.mkdir()
     path.write_text("test")
 
     with pytest.raises(HTTPException) as exc_info:
-        api_client.upload_file("release_id", "file.txt", path, "user")
+        api_client.upload_file("release_id", "output/file.txt", path, "user")
 
     response = exc_info.value
     assert response.detail == "error"
