@@ -184,7 +184,7 @@ def test_workspace_release_workspace_bad_sha(workspace):
     url = "/workspace/workspace/release"
     response = client.post(
         url,
-        json=release.dict(),
+        data=release.json(),
         headers=auth_headers(scope="release"),
     )
     assert response.status_code == 400
@@ -214,6 +214,7 @@ def test_workspace_release_success(workspace, httpx_mock):
     )
 
     assert response.status_code == 201
+    assert response.headers["Location"].endswith("/workspace/workspace/release/id")
 
 
 def test_release_index_api_bad_workspace():
@@ -306,29 +307,35 @@ def test_release_file_api(release):
 
 def test_release_file_upload_bad_scope(release):
     release.write("output/file.txt", "test")
-    url = f"/workspace/workspace/release/{release.id}/output/file.txt"
-    response = client.post(url, headers=auth_headers(scope="release"))
+    url = f"/workspace/workspace/release/{release.id}"
+    name = schema.ReleaseFile(name="output/file.txt")
+    response = client.post(url, data=name.json(), headers=auth_headers(scope="release"))
     assert response.status_code == 403
 
 
 def test_release_file_upload_bad_workspace(release):
     release.write("output/file.txt", "test")
-    url = f"/workspace/other/release/{release.id}/output/file.txt"
-    response = client.post(url, headers=auth_headers("other", scope="upload"))
+    url = f"/workspace/other/release/{release.id}"
+    name = schema.ReleaseFile(name="output/file.txt")
+    response = client.post(
+        url, data=name.json(), headers=auth_headers("other", scope="upload")
+    )
     assert response.status_code == 404
 
 
 def test_release_file_upload_bad_release(release):
     release.write("output/file.txt", "test")
-    url = "/workspace/workspace/release/badid/output/file.txt"
-    response = client.post(url, headers=auth_headers(scope="upload"))
+    url = "/workspace/workspace/release/badid"
+    name = schema.ReleaseFile(name="output/file.txt")
+    response = client.post(url, data=name.json(), headers=auth_headers(scope="upload"))
     assert response.status_code == 404
 
 
 def test_release_file_upload_bad_file(release):
     release.write("output/file.txt", "test")
-    url = f"/workspace/workspace/release/{release.id}/output/bad.txt"
-    response = client.post(url, headers=auth_headers(scope="upload"))
+    url = f"/workspace/workspace/release/{release.id}"
+    name = schema.ReleaseFile(name="output/bad.txt")
+    response = client.post(url, data=name.json(), headers=auth_headers(scope="upload"))
     assert response.status_code == 404
 
 
@@ -341,9 +348,11 @@ def test_release_file_upload(release, httpx_mock):
     )
     release.write("output/file.txt", "test")
 
-    url = f"/workspace/workspace/release/{release.id}/output/file.txt"
+    url = f"/workspace/workspace/release/{release.id}"
+    name = schema.ReleaseFile(name="output/file.txt")
     response = client.post(
         url,
+        data=name.json(),
         headers=auth_headers(scope="upload"),
     )
 

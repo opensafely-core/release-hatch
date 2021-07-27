@@ -31,3 +31,14 @@ class Release(BaseModel):
     """
 
     files: Dict[str, str]
+
+
+class ReleaseFile(BaseModel):
+    """File to upload to job-server.
+
+    This schema is unique to the release-hatch API, as the client just
+    indicates which file release-hatch should upload, rather than uploading the
+    bytes itself.
+    """
+
+    name: str

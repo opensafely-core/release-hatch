@@ -32,6 +32,11 @@ app.add_middleware(
 api_key_header = APIKeyHeader(name="Authorization")
 
 
+def reverse_url(view_name, **kwargs):
+    path = app.url_path_for(view_name, **kwargs)
+    return config.SERVER_HOST + path
+
+
 def validate(request: Request, auth_token: str = Security(api_key_header)):
     try:
         token = AuthToken.verify(auth_token)
@@ -119,7 +124,13 @@ def workspace_release(
         raise HTTPException(400, errors)
 
     response = models.create_release(workspace, workspace_dir, release, token.user)
-    # forward job-servers response back to client
+    release_id = response.headers["Release-Id"]
+
+    # rewrite location header to point to our upload endpoint, so that clients
+    # will know where to post their upload requests to.
+    response.headers["Location"] = reverse_url(
+        "release_file_upload", workspace=workspace, release_id=release_id
+    )
     return response
 
 
@@ -152,14 +163,18 @@ async def release_file(
     )
 
 
-@app.post("/workspace/{workspace}/release/{release_id}/{name:path}")
+@app.post("/workspace/{workspace}/release/{release_id}")
 def release_file_upload(
-    workspace: str, release_id: str, name: str, token: AuthToken = Depends(validate)
+    workspace: str,
+    release_id: str,
+    release_file: schema.ReleaseFile,
+    token: AuthToken = Depends(validate),
 ):
     """Upload a file from a release to job-server."""
     if token.scope != "upload":
         raise HTTPException(403, "Forbidden")
 
+    name = release_file.name
     workspace_dir = validate_workspace(workspace)
     release_dir = validate_release(workspace_dir, release_id)
     path = release_dir / name
