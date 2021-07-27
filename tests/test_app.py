@@ -12,7 +12,7 @@ from tests.test_signing import create_raw_token
 client = TestClient(app.app)
 
 
-def auth_token(path, user="user", expiry=None, scope="view"):
+def auth_token(path, user="user", expiry=None):
     if expiry is None:  # pragma: no cover
         expiry = datetime.now(timezone.utc) + timedelta(hours=1)
 
@@ -20,13 +20,12 @@ def auth_token(path, user="user", expiry=None, scope="view"):
         url=urljoin(client.base_url, path),
         user=user,
         expiry=expiry,
-        scope=scope,
     )
 
 
-def auth_headers(workspace="workspace", user="user", expiry=None, scope="view"):
+def auth_headers(workspace="workspace", user="user", expiry=None):
     """Helper to create valid authentication headers for a specific workspace"""
-    token = auth_token(f"/workspace/{workspace}", user, expiry, scope)
+    token = auth_token(f"/workspace/{workspace}", user, expiry)
     return {"Authorization": token.sign()}
 
 
@@ -52,7 +51,6 @@ def test_validate_invalid_token():
             url=urljoin(client.base_url, "/workspace/workspace"),
             user="user",
             expiry=datetime.now(timezone.utc) + timedelta(hours=1),
-            scope="view",
         ),
         signer=signer,
     )
@@ -72,7 +70,6 @@ def test_validate_expired_token():
             url=urljoin(client.base_url, "/workspace/workspace"),
             user="user",
             expiry=datetime.now(timezone.utc) - timedelta(hours=1),
-            scope="view",
         )
     )
     response = client.get(url, headers={"Authorization": token})
@@ -152,7 +149,7 @@ def test_file_api(workspace):
 
 def test_workspace_release_no_data():
     url = "/workspace/workspace/release"
-    response = client.post(url, headers=auth_headers(scope="release"))
+    response = client.post(url, headers=auth_headers())
     assert response.status_code == 422
 
 
@@ -161,17 +158,7 @@ def test_workspace_release_workspace_not_exists():
     response = client.post(
         url,
         json=schema.Release(files={}).dict(),
-        headers=auth_headers(scope="release"),
-    )
-    assert response.status_code == 403
-
-
-def test_workspace_release_workspace_bad_scope():
-    url = "/workspace/workspace/release"
-    response = client.post(
-        url,
-        json=schema.Release(files={}).dict(),
-        headers=auth_headers(scope="view"),
+        headers=auth_headers(),
     )
     assert response.status_code == 403
 
@@ -185,7 +172,7 @@ def test_workspace_release_workspace_bad_sha(workspace):
     response = client.post(
         url,
         data=release.json(),
-        headers=auth_headers(scope="release"),
+        headers=auth_headers(),
     )
     assert response.status_code == 400
     assert response.json()["detail"] == [
@@ -210,7 +197,7 @@ def test_workspace_release_success(workspace, httpx_mock):
     response = client.post(
         url,
         json=release.dict(),
-        headers=auth_headers(scope="release"),
+        headers=auth_headers(),
     )
 
     assert response.status_code == 201
@@ -305,21 +292,11 @@ def test_release_file_api(release):
     )
 
 
-def test_release_file_upload_bad_scope(release):
-    release.write("output/file.txt", "test")
-    url = f"/workspace/workspace/release/{release.id}"
-    name = schema.ReleaseFile(name="output/file.txt")
-    response = client.post(url, data=name.json(), headers=auth_headers(scope="release"))
-    assert response.status_code == 403
-
-
 def test_release_file_upload_bad_workspace(release):
     release.write("output/file.txt", "test")
     url = f"/workspace/other/release/{release.id}"
     name = schema.ReleaseFile(name="output/file.txt")
-    response = client.post(
-        url, data=name.json(), headers=auth_headers("other", scope="upload")
-    )
+    response = client.post(url, data=name.json(), headers=auth_headers("other"))
     assert response.status_code == 404
 
 
@@ -327,7 +304,7 @@ def test_release_file_upload_bad_release(release):
     release.write("output/file.txt", "test")
     url = "/workspace/workspace/release/badid"
     name = schema.ReleaseFile(name="output/file.txt")
-    response = client.post(url, data=name.json(), headers=auth_headers(scope="upload"))
+    response = client.post(url, data=name.json(), headers=auth_headers())
     assert response.status_code == 404
 
 
@@ -335,7 +312,7 @@ def test_release_file_upload_bad_file(release):
     release.write("output/file.txt", "test")
     url = f"/workspace/workspace/release/{release.id}"
     name = schema.ReleaseFile(name="output/bad.txt")
-    response = client.post(url, data=name.json(), headers=auth_headers(scope="upload"))
+    response = client.post(url, data=name.json(), headers=auth_headers())
     assert response.status_code == 404
 
 
@@ -353,7 +330,7 @@ def test_release_file_upload(release, httpx_mock):
     response = client.post(
         url,
         data=name.json(),
-        headers=auth_headers(scope="upload"),
+        headers=auth_headers(),
     )
 
     assert response.status_code == 201

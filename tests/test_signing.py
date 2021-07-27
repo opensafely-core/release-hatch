@@ -23,7 +23,6 @@ def test_token_sign_verify_roundtrip():
         url="https://example.com/url",
         user="user",
         expiry=datetime.now(timezone.utc) + timedelta(minutes=1),
-        scope="view",
     )
     token_string = token1.sign()
 
@@ -37,17 +36,6 @@ def test_token_object_url_invalid():
             url="bad",
             user="user",
             expiry=datetime.now(timezone.utc) + timedelta(minutes=1),
-            scope="view",
-        )
-
-
-def test_token_object_scope_invalid():
-    with pytest.raises(ValidationError):
-        signing.AuthToken(
-            url="https://example.com/url",
-            user="user",
-            expiry=datetime.now(timezone.utc) + timedelta(minutes=1),
-            scope="bad scope",
         )
 
 
@@ -57,7 +45,6 @@ def test_token_object_expired():
             url="https://example.com/url",
             user="user",
             expiry=datetime.now(timezone.utc) - timedelta(minutes=1),
-            scope="view",
         )
 
 
@@ -66,7 +53,6 @@ def test_token_verify_mismatched_secrets():
         url="https://example.com/url",
         user="user",
         expiry=datetime.now(timezone.utc) + timedelta(minutes=1),
-        scope="view",
     )
     signer = itsdangerous.Signer("bad secret")
     token = create_raw_token(payload, signer)
@@ -87,7 +73,6 @@ def test_token_verify_expired():
         url="https://example.com/url",
         user="user",
         expiry=datetime.now(timezone.utc) - timedelta(minutes=1),
-        scope="view",
     )
     token = create_raw_token(payload)
     with pytest.raises(signing.AuthToken.Expired):
@@ -99,7 +84,6 @@ def test_token_verify_wrong_all_the_things():
         url="bad url",
         # missing user
         expiry=datetime.now(timezone.utc) - timedelta(minutes=1),
-        scope="bad scope",
     )
     token = create_raw_token(payload)
     with pytest.raises(ValidationError) as exc_info:
@@ -109,4 +93,3 @@ def test_token_verify_wrong_all_the_things():
     assert "url" in errors
     assert "user" in errors
     assert "expiry" in errors
-    assert "scope" in errors
