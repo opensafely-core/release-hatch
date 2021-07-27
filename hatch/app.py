@@ -39,7 +39,7 @@ def reverse_url(view_name, **kwargs):
 
 def validate(request: Request, auth_token: str = Security(api_key_header)):
     try:
-        token = AuthToken.verify(auth_token)
+        token = AuthToken.verify(auth_token, config.BACKEND_TOKEN, "hatch")
     except AuthToken.Expired:
         raise HTTPException(401, "Unauthorized")
     except ValidationError:

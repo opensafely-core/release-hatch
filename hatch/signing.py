@@ -5,9 +5,6 @@ import itsdangerous
 from pydantic import BaseModel, Field, ValidationError, root_validator, validator
 
 
-_signer = None
-
-
 def create_signer(secret_key, salt):
     """Create a signer configured how we like it.
 
@@ -24,29 +21,16 @@ def create_signer(secret_key, salt):
 
     Ideally, we'd use cryptography for this, but that's a much heavier
     dependency than itsdangerous, which is pure python."""
-    combined = (secret_key + salt).encode("utf8")
-    assert len(combined) > 32, "secret_key+salt needs to be > 32 bytes"
+    value = secret_key
+    if salt is not None:
+        value += salt
+    assert len(value.encode("utf8")) > 32, "secret_key+salt needs to be > 32 bytes"
     return itsdangerous.Signer(
         secret_key=secret_key,
         salt=salt,
         key_derivation="hmac",  # would like to use HDKF, but not supported
         digest_method=hashlib.sha256,
     )
-
-
-def get_default_signer():
-    if _signer is None:  # pragma: no cover
-        raise RuntimeError("signer not configured - call signing.set_default_key(...)")
-    return _signer
-
-
-def set_default_key(key, salt):
-    """Set the default signing key and salt for an app."""
-    global _signer
-    # Use the basic signer, which uses hmac with sha-1.
-    # We encode our own payloads, so we can make use of pydantic's json
-    # advanced serialization
-    _signer = create_signer(key, salt)
 
 
 class AuthToken(BaseModel):
@@ -112,16 +96,14 @@ class AuthToken(BaseModel):
             raise cls.Expired()
         return values
 
-    def sign(self, signer=None):
-        if signer is None:  # pragma: no cover
-            signer = get_default_signer()
+    def sign(self, key, salt=None):
+        signer = create_signer(key, salt)
         # serialize to json with pydantic, which handles datetimes by default
         return signer.sign(self.json()).decode("utf8")
 
     @classmethod
-    def verify(cls, token_string, signer=None):
-        if signer is None:  # pragma: no cover
-            signer = get_default_signer()
+    def verify(cls, token_string, key, salt=None):
+        signer = create_signer(key, salt)
         try:
             payload = signer.unsign(token_string)
         except itsdangerous.BadSignature:
