@@ -13,8 +13,9 @@ exclude = '''
 [tool.coverage.run]
 branch = true
 omit = [
-   ".venv/*",
-   "dev-token.py",
+  ".direnv/*",
+  ".venv/*",
+  "dev-token.py",
 ]
 
 [tool.coverage.report]
