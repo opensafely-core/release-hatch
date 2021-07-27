@@ -12,9 +12,6 @@ def token(argv=sys.argv):
     parser.add_argument("workspace", help="workspace for token url")
     parser.add_argument("--user", "-u", default=getpass.getuser(), help="token user")
     parser.add_argument(
-        "--scope", "-s", default="view", help="token scope [view, release, upload]"
-    )
-    parser.add_argument(
         "--duration", "-d", default=60, help="how many minutes is the token valid for"
     )
 
@@ -22,7 +19,7 @@ def token(argv=sys.argv):
 
     url = urljoin(config.SERVER_HOST, f"/workspace/{args.workspace}")
     expiry = datetime.now(timezone.utc) + timedelta(minutes=args.duration)
-    token = signing.AuthToken(url=url, user=args.user, expiry=expiry, scope=args.scope)
+    token = signing.AuthToken(url=url, user=args.user, expiry=expiry)
     print(token.sign())
 
 

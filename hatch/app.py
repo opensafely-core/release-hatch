@@ -115,9 +115,6 @@ def workspace_release(
 ):
     """Create a Release locally and in job-server."""
 
-    if token.scope not in ["release", "upload"]:
-        raise HTTPException(403, "Forbidden")
-
     workspace_dir = validate_workspace(workspace)
     errors = models.validate_release(workspace, workspace_dir, release)
     if errors:
@@ -171,9 +168,6 @@ def release_file_upload(
     token: AuthToken = Depends(validate),
 ):
     """Upload a file from a release to job-server."""
-    if token.scope != "upload":
-        raise HTTPException(403, "Forbidden")
-
     name = release_file.name
     workspace_dir = validate_workspace(workspace)
     release_dir = validate_release(workspace_dir, release_id)
