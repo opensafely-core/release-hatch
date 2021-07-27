@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urljoin
 
-import itsdangerous
 from fastapi.testclient import TestClient
 
 from hatch import app, config, schema, signing
@@ -26,7 +25,7 @@ def auth_token(path, user="user", expiry=None):
 def auth_headers(workspace="workspace", user="user", expiry=None):
     """Helper to create valid authentication headers for a specific workspace"""
     token = auth_token(f"/workspace/{workspace}", user, expiry)
-    return {"Authorization": token.sign()}
+    return {"Authorization": token.sign(config.BACKEND_TOKEN, "hatch")}
 
 
 def test_cors():
@@ -45,14 +44,13 @@ def test_cors():
 
 def test_validate_invalid_token():
     url = "/workspace/workspace/current"
-    signer = itsdangerous.Signer("badsecret")
     token = create_raw_token(
         dict(
             url=urljoin(client.base_url, "/workspace/workspace"),
             user="user",
             expiry=datetime.now(timezone.utc) + timedelta(hours=1),
         ),
-        signer=signer,
+        "bad secret" * 10,
     )
 
     # we can not easily call validate() directly, as fastapi's Request object
@@ -70,7 +68,9 @@ def test_validate_expired_token():
             url=urljoin(client.base_url, "/workspace/workspace"),
             user="user",
             expiry=datetime.now(timezone.utc) - timedelta(hours=1),
-        )
+        ),
+        key=config.BACKEND_TOKEN,
+        salt="hatch",
     )
     response = client.get(url, headers={"Authorization": token})
     assert response.status_code == 401

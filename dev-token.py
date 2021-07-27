@@ -20,7 +20,7 @@ def token(argv=sys.argv):
     url = urljoin(config.SERVER_HOST, f"/workspace/{args.workspace}")
     expiry = datetime.now(timezone.utc) + timedelta(minutes=args.duration)
     token = signing.AuthToken(url=url, user=args.user, expiry=expiry)
-    print(token.sign())
+    print(token.sign(config.BACKEND_TOKEN, salt="hatch"))
 
 
 if __name__ == "__main__":

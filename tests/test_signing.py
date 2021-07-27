@@ -1,7 +1,7 @@
 import json
+import secrets
 from datetime import datetime, timedelta, timezone
 
-import itsdangerous
 import pytest
 from pydantic import ValidationError
 from pydantic.json import pydantic_encoder
@@ -9,24 +9,28 @@ from pydantic.json import pydantic_encoder
 from hatch import signing
 
 
-def create_raw_token(value, signer=None):
+@pytest.fixture
+def secret_key():
+    return secrets.token_hex(32)
+
+
+def create_raw_token(value, key, salt=None):
     """To be used to create bad tokens that AuthToken won't let you create."""
-    if signer is None:
-        signer = signing.get_default_signer()
+    signer = signing.create_signer(key, salt)
     if isinstance(value, (dict, list)):
         value = json.dumps(value, default=pydantic_encoder)
     return signer.sign(value).decode("utf8")
 
 
-def test_token_sign_verify_roundtrip():
+def test_token_sign_verify_roundtrip(secret_key):
     token1 = signing.AuthToken(
         url="https://example.com/url",
         user="user",
         expiry=datetime.now(timezone.utc) + timedelta(minutes=1),
     )
-    token_string = token1.sign()
+    token_string = token1.sign(secret_key, "salt")
 
-    token2 = signing.AuthToken.verify(token_string)
+    token2 = signing.AuthToken.verify(token_string, secret_key, "salt")
     assert token1 == token2
 
 
@@ -54,40 +58,40 @@ def test_token_verify_mismatched_secrets():
         user="user",
         expiry=datetime.now(timezone.utc) + timedelta(minutes=1),
     )
-    signer = itsdangerous.Signer("bad secret")
-    token = create_raw_token(payload, signer)
+    token = create_raw_token(payload, "secret1" * 10)
 
     with pytest.raises(ValidationError):
-        signing.AuthToken.verify(token)
+        signing.AuthToken.verify(token, "secret2" * 10)
 
 
-def test_token_verify_bad_payload_format():
+def test_token_verify_bad_payload_format(secret_key):
     payload = "not a json object"
-    token = create_raw_token(payload)
+
+    token = create_raw_token(payload, secret_key)
     with pytest.raises(ValidationError):
-        signing.AuthToken.verify(token)
+        signing.AuthToken.verify(token, secret_key)
 
 
-def test_token_verify_expired():
+def test_token_verify_expired(secret_key):
     payload = dict(
         url="https://example.com/url",
         user="user",
         expiry=datetime.now(timezone.utc) - timedelta(minutes=1),
     )
-    token = create_raw_token(payload)
+    token = create_raw_token(payload, secret_key)
     with pytest.raises(signing.AuthToken.Expired):
-        signing.AuthToken.verify(token)
+        signing.AuthToken.verify(token, secret_key)
 
 
-def test_token_verify_wrong_all_the_things():
+def test_token_verify_wrong_all_the_things(secret_key):
     payload = dict(
         url="bad url",
         # missing user
         expiry=datetime.now(timezone.utc) - timedelta(minutes=1),
     )
-    token = create_raw_token(payload)
+    token = create_raw_token(payload, secret_key)
     with pytest.raises(ValidationError) as exc_info:
-        signing.AuthToken.verify(token)
+        signing.AuthToken.verify(token, secret_key)
 
     errors = {e["loc"][0]: e for e in exc_info.value.errors()}
     assert "url" in errors
