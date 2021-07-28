@@ -41,9 +41,20 @@ def get_sha(path):
 def get_files(path):
     """List all files in a directory recursively as a flat list.
 
-    Sorted, and does not include directory entries.
+    Sorted, and excluding various files
     """
-    return list(sorted([p.relative_to(path) for p in path.glob("**/*") if p.is_file()]))
+
+    def exclude(p):
+        strpath = str(p)
+        return (
+            strpath.startswith(".")
+            or strpath.startswith("releases/")
+            or strpath.startswith("metadata/")
+            or str(p.name).startswith(".")
+        )
+
+    relative_paths = (p.relative_to(path) for p in path.glob("**/*") if p.is_file())
+    return list(sorted(filter(lambda p: not exclude(p), relative_paths)))
 
 
 def get_index(path, urlbase):
@@ -54,7 +65,7 @@ def get_index(path, urlbase):
         date = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat()
         files.append(
             FileSchema(
-                name=str(name),
+                name=name,
                 url=urljoin(urlbase, str(name)),
                 size=stat.st_size,
                 sha256=get_sha(abspath),

@@ -1,5 +1,6 @@
 import hashlib
 import time
+from pathlib import Path
 
 import pytest
 from fastapi import HTTPException
@@ -46,6 +47,17 @@ def test_get_sha_stale_cache(workspace):
     expected_sha = hashlib.sha256(b"test").hexdigest()
     assert sha == expected_sha
     assert (config.CACHE / "workspace/file.txt").read_text() == expected_sha
+
+
+def test_get_files(workspace):
+    workspace.write("output/file.txt", "test")
+    # all these should be ignored
+    workspace.write("metadata/manifest.json", "test")
+    workspace.write("releases/id/file.txt", "test")
+    workspace.write(".git/config", "test")
+    workspace.write("output/.hidden", "test")
+
+    assert models.get_files(workspace.path) == [Path("output/file.txt")]
 
 
 def test_get_index(workspace):
