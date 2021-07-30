@@ -1,3 +1,5 @@
+from functools import partial
+
 import aiofiles
 from fastapi import Depends, FastAPI, HTTPException, Security
 from fastapi.middleware.cors import CORSMiddleware
@@ -87,19 +89,24 @@ def workspace_index(
 ):
     """Return an index of the files on disk in this workspace."""
     path = validate_workspace(workspace)
-    return models.get_index(path, request.url.path + "/")
+
+    # prepare a function for the index function to construct URLs to the
+    # correct file endpoint
+    url_builder = partial(reverse_url, "workspace_file", workspace=workspace)
+
+    return models.get_index(path, url_builder)
 
 
-@app.get("/workspace/{workspace}/current/{name:path}")
+@app.get("/workspace/{workspace}/current/{filename:path}")
 async def workspace_file(
-    workspace: str, name: str, token: AuthToken = Depends(validate)
+    workspace: str, filename: str, token: AuthToken = Depends(validate)
 ):
     """Return the contents of a file in this workspace.
 
     Note: this API is async, to serve files efficiently."""
-    path = config.WORKSPACES / workspace / name
+    path = config.WORKSPACES / workspace / filename
     if not await aioexists(path):
-        raise HTTPException(404, f"File {name} not found in workspace {workspace}")
+        raise HTTPException(404, f"File {filename} not found in workspace {workspace}")
 
     # FastAPI supports async file responses
     return FileResponse(
@@ -141,19 +148,29 @@ def release_index(
     """Index of files in a Release."""
     workspace_dir = validate_workspace(workspace)
     release_dir = validate_release(workspace_dir, release_id)
-    return models.get_index(release_dir, request.url.path + "/")
+
+    # prepare a function for the index function to construct URLs to the
+    # correct file endpoint
+    url_builder = partial(
+        reverse_url,
+        "release_file",
+        workspace=workspace,
+        release_id=release_id,
+    )
+
+    return models.get_index(release_dir, url_builder)
 
 
-@app.get("/workspace/{workspace}/release/{release_id}/{name:path}")
+@app.get("/workspace/{workspace}/release/{release_id}/{filename:path}")
 async def release_file(
-    workspace: str, release_id: str, name: str, token: AuthToken = Depends(validate)
+    workspace: str, release_id: str, filename: str, token: AuthToken = Depends(validate)
 ):
     """Return the contents of a file in this workspace.
 
     Note: this API is async, to serve files efficiently."""
-    path = config.WORKSPACES / workspace / "releases" / release_id / name
+    path = config.WORKSPACES / workspace / "releases" / release_id / filename
     if not await aioexists(path):
-        raise HTTPException(404, f"File {name} not found in release {release_id}")
+        raise HTTPException(404, f"File {filename} not found in release {release_id}")
 
     return FileResponse(
         path, headers={"Content-Security-Policy": f"frame-src: {config.API_SERVER};"}

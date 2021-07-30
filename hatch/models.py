@@ -4,7 +4,6 @@ import shutil
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
-from urllib.parse import urljoin
 
 from hatch import api_client, config
 from hatch.schema import FileSchema, IndexSchema
@@ -57,7 +56,7 @@ def get_files(path):
     return list(sorted(filter(lambda p: not exclude(p), relative_paths)))
 
 
-def get_index(path, urlbase):
+def get_index(path, url_builder):
     files = []
     for name in get_files(path):
         abspath = path / name
@@ -66,7 +65,7 @@ def get_index(path, urlbase):
         files.append(
             FileSchema(
                 name=name,
-                url=urljoin(urlbase, str(name)),
+                url=url_builder(filename=str(name)),
                 size=stat.st_size,
                 sha256=get_sha(abspath),
                 date=date,

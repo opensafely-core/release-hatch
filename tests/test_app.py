@@ -110,7 +110,7 @@ def test_index_api(workspace):
         "files": [
             {
                 "name": "output/file1.txt",
-                "url": "/workspace/workspace/current/output/file1.txt",
+                "url": "http://testserver/workspace/workspace/current/output/file1.txt",
                 "size": 5,
                 "sha256": workspace.get_sha("output/file1.txt"),
                 "date": workspace.get_date("output/file1.txt"),
@@ -118,7 +118,7 @@ def test_index_api(workspace):
             },
             {
                 "name": "output/file2.txt",
-                "url": "/workspace/workspace/current/output/file2.txt",
+                "url": "http://testserver/workspace/workspace/current/output/file2.txt",
                 "size": 5,
                 "sha256": workspace.get_sha("output/file2.txt"),
                 "date": workspace.get_date("output/file2.txt"),
@@ -243,7 +243,7 @@ def test_release_index_api(release):
         "files": [
             {
                 "name": "output/file1.txt",
-                "url": f"/workspace/workspace/release/{release.id}/output/file1.txt",
+                "url": f"http://testserver/workspace/workspace/release/{release.id}/output/file1.txt",
                 "size": 5,
                 "sha256": release.get_sha("output/file1.txt"),
                 "date": release.get_date("output/file1.txt"),
@@ -251,7 +251,7 @@ def test_release_index_api(release):
             },
             {
                 "name": "output/file2.txt",
-                "url": f"/workspace/workspace/release/{release.id}/output/file2.txt",
+                "url": f"http://testserver/workspace/workspace/release/{release.id}/output/file2.txt",
                 "size": 5,
                 "sha256": release.get_sha("output/file2.txt"),
                 "date": release.get_date("output/file2.txt"),
