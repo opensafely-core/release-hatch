@@ -14,3 +14,4 @@ pytest
 pytest-coverage
 pytest-httpx
 requests
+pip-tools
