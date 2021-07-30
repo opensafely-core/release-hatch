@@ -148,13 +148,13 @@ def test_file_api(workspace):
 
 
 def test_workspace_release_no_data():
-    url = "/workspace/workspace/release"
+    url = "/workspace/workspace/release/"
     response = client.post(url, headers=auth_headers())
     assert response.status_code == 422
 
 
 def test_workspace_release_workspace_not_exists():
-    url = "/workspace/notexists/release"
+    url = "/workspace/notexists/release/"
     response = client.post(
         url,
         json=schema.Release(files={}).dict(),
@@ -168,7 +168,7 @@ def test_workspace_release_workspace_bad_sha(workspace):
 
     release = schema.Release(files={"output/file1.txt": "badhash"})
 
-    url = "/workspace/workspace/release"
+    url = "/workspace/workspace/release/"
     response = client.post(
         url,
         data=release.json(),
@@ -193,7 +193,7 @@ def test_workspace_release_success(workspace, httpx_mock):
         files={"output/file.txt": workspace.get_sha("output/file.txt")}
     )
 
-    url = "/workspace/workspace/release"
+    url = "/workspace/workspace/release/"
     response = client.post(
         url,
         json=release.dict(),

@@ -114,7 +114,7 @@ async def workspace_file(
     )
 
 
-@app.post("/workspace/{workspace}/release")
+@app.post("/workspace/{workspace}/release/")
 def workspace_release(
     workspace: str,
     release: schema.Release,
