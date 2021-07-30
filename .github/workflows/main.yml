@@ -1,6 +1,9 @@
 ---
 name: CI
 
+env:
+    IMAGE_NAME: release-hatch
+
 on:
   push:
 
@@ -28,9 +31,33 @@ jobs:
           python-version: "3.9"
       - uses: extractions/setup-just@v1
       - name: Run tests
-#       env:  # Add environment variables required for tests
         run: |
           just test
+
+  docker:
+    needs: [test]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: "actions/setup-python@v2"
+        with:
+          python-version: "3.9"
+      - uses: extractions/setup-just@v1
+      - name: Build docker image and run tests in it
+        run: |
+          # build docker and run test
+          just docker-test
+          # test that prod image builds
+          just docker-build prod
+      - name: publish docker image
+        if: github.ref == 'refs/heads/main'
+        run: |
+            # use new GITHUB_TOKEN auth
+            IMAGE_ID=ghcr.io/${{ github.repository_owner }}/$IMAGE_NAME
+            docker tag $IMAGE_NAME $IMAGE_ID:latest
+            docker push $IMAGE_ID:latest
+
 
   lint-dockerfile:
     runs-on: ubuntu-latest

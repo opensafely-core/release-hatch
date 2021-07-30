@@ -1,6 +1,7 @@
 # list available commands
 default:
-    @just --list
+    @{{ just_executable() }} --list
+
 
 # Set up local dev environment
 dev_setup:
@@ -10,7 +11,7 @@ dev_setup:
     dev_setup
 
 # run the test suite. Optional args are passed to pytest
-test ARGS="":
+test *ARGS:
     #!/usr/bin/env bash
     set -euo pipefail
     . scripts/setup_functions
@@ -68,3 +69,41 @@ token WORKSPACE="workspace":
     . scripts/setup_functions
     dev_setup
     python dev-token.py "{{ WORKSPACE }}"
+
+
+
+# docker-compose bails if it cannot find this file, even though we don't
+# actually need it to build, so ensure it exists.
+# ensure .env file
+env:
+    @test -f .env || cp dotenv-sample.env .env
+
+
+# export once for all docker commands
+export DOCKER_USERID := `id -u`
+
+
+# build docker image env=dev|prod
+docker-build env="dev": env
+    #!/usr/bin/env bash
+
+    # enable modern docker build features
+    export DOCKER_BUILDKIT=1
+    export COMPOSE_DOCKER_CLI_BUILD=1
+
+    # set build args for prod builds
+    export BUILD_DATE=$(date -u +'%y-%m-%dT%H:%M:%SZ')
+    export GITREF=$(git rev-parse --short HEAD)
+
+    # build the thing
+    docker-compose build {{ env }}
+
+
+# run tests in docker container
+docker-test: docker-build
+    docker-compose run --rm test
+
+
+# run dev server in docker container
+docker-run: docker-build
+    docker-compose up dev
