@@ -1,11 +1,12 @@
 import hashlib
 import time
+from functools import partial
 from pathlib import Path
 
 import pytest
 from fastapi import HTTPException
 
-from hatch import config, models, schema
+from hatch import app, config, models, schema
 
 
 def test_get_sha_caches_sha(workspace):
@@ -64,13 +65,15 @@ def test_get_index(workspace):
     workspace.write("output/file1.txt", "test1")
     workspace.write("output/file2.txt", "test2")
 
-    index = models.get_index(workspace.path, "/url/").dict()
+    url_builder = partial(app.reverse_url, "workspace_file", workspace=workspace.name)
+
+    index = models.get_index(workspace.path, url_builder).dict()
 
     assert index == {
         "files": [
             {
                 "name": "output/file1.txt",
-                "url": "/url/output/file1.txt",
+                "url": "http://testserver/workspace/workspace/current/output/file1.txt",
                 "size": 5,
                 "sha256": workspace.get_sha("output/file1.txt"),
                 "date": workspace.get_date("output/file1.txt", iso=False),
@@ -78,7 +81,7 @@ def test_get_index(workspace):
             },
             {
                 "name": "output/file2.txt",
-                "url": "/url/output/file2.txt",
+                "url": "http://testserver/workspace/workspace/current/output/file2.txt",
                 "size": 5,
                 "sha256": workspace.get_sha("output/file2.txt"),
                 "date": workspace.get_date("output/file2.txt", iso=False),
