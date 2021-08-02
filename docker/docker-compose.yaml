@@ -4,7 +4,9 @@ services:
   prod:
     image: release-hatch-prod
     build:
-      context: .
+      context: ..
+      # path relative to context
+      dockerfile: docker/Dockerfile
       # the prod stage in the Dockerfile
       target: release-hatch-prod
       # should speed up the build in CI, where we have a cold cache
@@ -22,8 +24,9 @@ services:
     # release-hatch's default port is 8001
     ports:
       - "8001:8001"
+    # relative to docker-compose.yaml
     volumes:
-      - ./workspaces:/workspaces
+      - ../workspaces:/workspaces
     # ensure WORKSPACES environent points volume
     environment:
       WORKSPACES: /workspaces
@@ -43,10 +46,11 @@ services:
       # pass the user id as build arg (default to 1000)
       args:
         - USERID=${DOCKER_USERID:-1000}
+    # paths relative to docker-compose.yaml file
     env_file:
-      - .env
+      - ../.env
     volumes:
-      - .:/app
+      - ..:/app
 
   # test runner service - uses dev-image with a different commnd
   test:
@@ -57,4 +61,4 @@ services:
     command: /opt/venv/bin/pytest
     # different default test env
     env_file:
-      - .test.env
+      - ../.test.env
