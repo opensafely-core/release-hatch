@@ -84,7 +84,7 @@ class AuthToken(BaseModel):
         """Enforce that we need a fully qualified url."""
         if url.startswith(("http://", "https://")):
             return url
-        raise ValueError(f"Invalid url {url}")
+        raise ValueError(f"Invalid url '{url}'")
 
     @validator("expiry")
     def check_expiry(cls, expiry):
@@ -95,7 +95,11 @@ class AuthToken(BaseModel):
 
     @root_validator
     def validate_all(cls, values):
-        """If only invalid field is 'expiry',  raise a different exception."""
+        """If only invalid field is 'expiry', raise a different exception.
+
+        This allows us to treat expiry as a soft error, rather than a hard
+        one.
+        """
         # values dict contains all fields that have been validated.
         if "expiry" in values:
             return values
