@@ -17,7 +17,7 @@ jobs:
       - uses: "actions/setup-python@v2"
         with:
           python-version: "3.9"
-      - uses: extractions/setup-just@v1
+      - uses: extractions/setup-just@aa5d15c144db4585980a44ebfdd2cf337c4f14cb  # v1.4.0
       - name: Check formatting, linting and import sorting
         run: just check
 
@@ -30,7 +30,7 @@ jobs:
       - uses: "actions/setup-python@v2"
         with:
           python-version: "3.9"
-      - uses: extractions/setup-just@v1
+      - uses: extractions/setup-just@aa5d15c144db4585980a44ebfdd2cf337c4f14cb  # v1.4.0
       - name: Run tests
         run: |
           just test
@@ -38,21 +38,26 @@ jobs:
   docker:
     needs: [test]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - uses: actions/checkout@v2
       - uses: "actions/setup-python@v2"
         with:
           python-version: "3.9"
-      - uses: extractions/setup-just@v1
+      - uses: extractions/setup-just@aa5d15c144db4585980a44ebfdd2cf337c4f14cb  # v1.4.0
       - name: Build docker image and run tests in it
         run: |
           # build docker and run test
           just docker-test
-          # test that prod image builds
+          # docker-test will build the dev image by default, so build the prod image
           just docker-build prod
+          # TODO smoketests
       - name: Login to Packages Container registry
-        uses: docker/login-action@v1
+        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9  # v1.10.0
+        if: github.ref == 'refs/heads/main'
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -60,9 +65,8 @@ jobs:
       - name: publish docker image
         if: github.ref == 'refs/heads/main'
         run: |
-            # use new GITHUB_TOKEN auth
-            IMAGE_ID=ghcr.io/${{ github.repository_owner }}/$IMAGE_NAME
-            docker tag $IMAGE_NAME $IMAGE_ID:latest
+            IMAGE_ID=$REGISTRY/${{ github.repository_owner }}/$IMAGE_NAME
+            docker tag $IMAGE_NAME-prod $IMAGE_ID:latest
             docker push $IMAGE_ID:latest
 
 
