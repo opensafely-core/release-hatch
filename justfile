@@ -85,10 +85,10 @@ docker-build env="dev": env
 
 
 # run tests in docker container
-docker-test:
+docker-test: env
     {{ just_executable() }} docker/test
 
 
 # run dev server in docker container
-docker-run:
+docker-run: env
     {{ just_executable() }} docker/run

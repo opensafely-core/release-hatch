@@ -37,3 +37,4 @@ repos:
     rev: cdefcb0
     hooks:
     - id: hadolint
+      files: docker/Dockerfile
