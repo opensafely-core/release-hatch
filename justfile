@@ -96,7 +96,7 @@ docker-build env="dev": env
     export GITREF=$(git rev-parse --short HEAD)
 
     # build the thing
-    docker-compose build {{ env }}
+    docker-compose build --pull {{ env }}
 
 
 # run tests in docker container
