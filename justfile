@@ -79,31 +79,16 @@ env:
     @test -f .env || cp dotenv-sample.env .env
 
 
-# export once for all docker commands
-export DOCKER_USERID := `id -u`
-
-
 # build docker image env=dev|prod
 docker-build env="dev": env
-    #!/usr/bin/env bash
-
-    # enable modern docker build features
-    export DOCKER_BUILDKIT=1
-    export COMPOSE_DOCKER_CLI_BUILD=1
-
-    # set build args for prod builds
-    export BUILD_DATE=$(date -u +'%y-%m-%dT%H:%M:%SZ')
-    export GITREF=$(git rev-parse --short HEAD)
-
-    # build the thing
-    docker-compose build --pull {{ env }}
+    {{ just_executable() }} docker/build {{ env }}
 
 
 # run tests in docker container
-docker-test: docker-build
-    docker-compose run --rm test
+docker-test: env
+    {{ just_executable() }} docker/test
 
 
 # run dev server in docker container
-docker-run: docker-build
-    docker-compose up dev
+docker-run: env
+    {{ just_executable() }} docker/run

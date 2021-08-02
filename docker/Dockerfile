@@ -20,10 +20,9 @@ RUN --mount=type=cache,target=/var/cache/apt \
   /root/docker-apt-install.sh python3 python3-venv python3-pip python3-distutils tzdata ca-certificates
 
 # install any additional system dependencies
-# Uncomment if you add dependencies.txt
-#RUN --mount=type=bind,source=dependencies.txt,target=/dependencies.txt \
-#    --mount=type=cache,target=/var/cache/apt \
-#    /root/docker-apt-install.sh /dependencies.txt
+COPY docker/dependencies.txt /tmp/dependencies.txt
+RUN --mount=type=cache,target=/var/cache/apt \
+    /root/docker-apt-install.sh /tmp/dependencies.txt
 
 
 ##################################################
@@ -39,10 +38,9 @@ RUN --mount=type=cache,target=/var/cache/apt \
 FROM base-python as builder
 
 # Install any system build dependencies
-# Uncomment if you add build-dependencies.txt
-#RUN --mount=type=bind,source=build-dependencies.txt,target=/build-dependencies.txt \
-#    --mount=type=cache,target=/var/cache/apt \
-#    /root/docker-apt-install.sh /build-dependencies.txt
+COPY docker/build-dependencies.txt /tmp/build-dependencies.txt
+RUN --mount=type=cache,target=/var/cache/apt \
+    /root/docker-apt-install.sh /tmp/build-dependencies.txt
 
 # Install everything in venv for isolation from system python libraries
 RUN python3 -m venv /opt/venv
@@ -117,7 +115,7 @@ COPY . /app
 
 # We set command rather than entrypoint, to make it easier to run different
 # things from the cli
-CMD ["/app/entrypoints/prod.sh"]
+CMD ["/app/docker/entrypoints/prod.sh"]
 
 # finally, tag with build information. These will change regularly, therefore
 # we do them as the last action.
@@ -149,7 +147,7 @@ COPY requirements.dev.txt /tmp/requirements.dev.txt
 RUN --mount=type=cache,target=/root/.cache \
     python -m pip install --require-hashes --requirement /tmp/requirements.dev.txt
 
-CMD ["/app/entrypoints/dev.sh"]
+CMD ["/app/docker/entrypoints/dev.sh"]
 
 # in dev, ensure appuser uid matches host user id
 ARG USERID=1000
