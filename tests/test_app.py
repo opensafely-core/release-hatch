@@ -42,7 +42,7 @@ def test_cors():
     assert "Authorization" in response.headers["access-control-allow-headers"]
 
 
-def test_validate_invalid_token():
+def test_validate_invalid_token_secret():
     url = "/workspace/workspace/current"
     token = create_raw_token(
         dict(
@@ -51,6 +51,25 @@ def test_validate_invalid_token():
             expiry=datetime.now(timezone.utc) + timedelta(hours=1),
         ),
         "bad secret" * 10,
+    )
+
+    # we can not easily call validate() directly, as fastapi's Request object
+    # is very much not sans-io, and thus difficult just instantiate.
+    response = client.get(url, headers={"Authorization": token})
+
+    assert response.status_code == 403
+
+
+def test_validate_invalid_token_values():
+    url = "/workspace/workspace/current"
+    token = create_raw_token(
+        dict(
+            url="bad url",
+            user="user",
+            expiry=datetime.now(timezone.utc) + timedelta(hours=1),
+        ),
+        config.BACKEND_TOKEN,
+        salt="hatch",
     )
 
     # we can not easily call validate() directly, as fastapi's Request object

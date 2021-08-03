@@ -60,7 +60,7 @@ def test_token_verify_mismatched_secrets():
     )
     token = create_raw_token(payload, "secret1" * 10)
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(signing.AuthToken.BadSignature):
         signing.AuthToken.verify(token, "secret2" * 10)
 
 
