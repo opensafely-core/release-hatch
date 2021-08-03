@@ -1,3 +1,4 @@
+import logging
 from functools import partial
 
 import aiofiles
@@ -12,8 +13,9 @@ from hatch import config, models, schema
 from hatch.signing import AuthToken
 
 
-app = FastAPI()
+logger = logging.Logger(__name__)
 
+app = FastAPI()
 
 # Allow SPA to access these files
 app.add_middleware(
@@ -42,16 +44,25 @@ def reverse_url(view_name, **kwargs):
 def validate(request: Request, auth_token: str = Security(api_key_header)):
     try:
         token = AuthToken.verify(auth_token, config.BACKEND_TOKEN, "hatch")
-    except AuthToken.Expired:
+    except AuthToken.Expired as exc:
+        logger.info(str(exc))
         raise HTTPException(401, "Unauthorized")
-    except ValidationError:
+    except AuthToken.BadSignature as exc:
+        logger.info(str(exc))
+        raise HTTPException(403, "Forbbiden")
+    except ValidationError as exc:
+        logger.info(str(exc))
         raise HTTPException(403, "Forbidden")
 
     # We validate the full url prefix for 2 reasons:
     # 1) Validating the FQDN prevents possibly use of this token in a different context
     # 2) All urls start with /workspace/{workspace}/, so it effectively
     #    constrains a token to a workspace
-    if not str(request.url).startswith(token.url):
+    public_url = config.SERVER_HOST + request.url.path
+    if not public_url.startswith(token.url):
+        logger.info(
+            f"token url '{token.url}' did not match public request url '{public_url}'"
+        )
         raise HTTPException(403, "Forbidden")
 
     return token

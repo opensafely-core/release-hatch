@@ -9,7 +9,7 @@ import hashlib
 from datetime import datetime, timezone
 
 import itsdangerous
-from pydantic import BaseModel, Field, ValidationError, root_validator, validator
+from pydantic import BaseModel, Field, root_validator, validator
 
 
 def create_signer(secret_key, salt):
@@ -76,8 +76,11 @@ class AuthToken(BaseModel):
         # do not allow anyone to set values after instantiation
         allow_mutation = False
 
+    # exceptions
     class Expired(Exception):
         pass
+
+    BadSignature = itsdangerous.BadSignature
 
     @validator("url")
     def check_url(cls, url):
@@ -115,10 +118,7 @@ class AuthToken(BaseModel):
     @classmethod
     def verify(cls, token_string, key, salt=None):
         signer = create_signer(key, salt)
-        try:
-            payload = signer.unsign(token_string)
-        except itsdangerous.BadSignature:
-            raise ValidationError(["bad signature"], cls)
+        payload = signer.unsign(token_string)
 
         # Use pydantics json parsing. The individual fields will be validated
         # as normal
