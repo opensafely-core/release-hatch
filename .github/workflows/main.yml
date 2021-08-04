@@ -65,9 +65,9 @@ jobs:
       - name: publish docker image
         if: github.ref == 'refs/heads/main'
         run: |
-            IMAGE_ID=$REGISTRY/${{ github.repository_owner }}/$IMAGE_NAME
-            docker tag $IMAGE_NAME-prod $IMAGE_ID:latest
-            docker push $IMAGE_ID:latest
+            PUBLIC_IMAGE_NAME=$REGISTRY/${{ github.repository_owner }}/$IMAGE_NAME
+            docker tag $IMAGE_NAME $PUBLIC_IMAGE_NAME:latest
+            docker push $PUBLIC_IMAGE_NAME:latest
 
 
   lint-dockerfile:

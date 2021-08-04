@@ -1,4 +1,5 @@
 export DOCKER_USERID := `id -u`
+export DOCKER_GROUPID := `id -g`
 
 
 build env="dev":
@@ -22,5 +23,15 @@ test: build
 
 
 # run dev server in docker container
-run: build
+serve: build
     docker-compose up dev
+
+
+# run command in dev container
+run *args="bash": build
+    docker-compose run dev {{ args }}
+
+
+# exec command in existing dev container
+exec *args="bash": build
+    docker-compose exec dev {{ args }}

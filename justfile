@@ -131,5 +131,15 @@ docker-test: _env
 
 
 # run dev server in docker container
-docker-run: _env
-    {{ just_executable() }} docker/run
+docker-serve: _env
+    {{ just_executable() }} docker/serve
+
+
+# run cmd in dev docker continer
+docker-run *args="bash": _env
+    {{ just_executable() }} docker/run {{ args }}
+
+
+# exec command in an existing dev docker container
+docker-exec *args="bash": _env
+    {{ just_executable() }} docker/exec {{ args }}

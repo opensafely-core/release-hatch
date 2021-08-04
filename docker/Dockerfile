@@ -76,7 +76,10 @@ RUN --mount=type=cache,target=/root/.cache \
 FROM base-python as release-hatch-base
 
 # Create a non-root user to run the app as
-RUN useradd --create-home appuser
+# We currently use host bind mounts in production backends, which means if we
+# need to match the uid inside the container to the one on the host.  To do
+# this, we reserve uid/gid 10000 to use as our running user on the host.
+RUN useradd --create-home --user-group --uid 10000 appuser
 
 # copy venv over from builder image. These will have root:root ownership, but
 # are readable by all.
@@ -151,7 +154,8 @@ CMD ["/app/docker/entrypoints/dev.sh"]
 
 # in dev, ensure appuser uid matches host user id
 ARG USERID=1000
-RUN usermod -u $USERID appuser
+ARG GROUPID=1000
+RUN usermod -u $USERID appuser && groupmod -g $GROUPID appuser
 
 # switch back to appuser
 USER appuser
