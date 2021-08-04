@@ -1,4 +1,5 @@
 import hashlib
+import logging
 import os
 import shutil
 import tempfile
@@ -7,6 +8,9 @@ from pathlib import Path
 
 from hatch import api_client, config
 from hatch.schema import FileSchema, IndexSchema
+
+
+logger = logging.Logger(__name__)
 
 
 def get_sha(path):
@@ -26,8 +30,13 @@ def get_sha(path):
     if sha_path.exists():
         sha_modified = sha_path.stat().st_mtime
         src_modified = path.stat().st_mtime
-        if src_modified < sha_modified:
+        if src_modified <= sha_modified:
+            logger.debug(f"SHA_CACHE: HIT: {path}")
             sha = sha_path.read_text()
+        else:
+            logger.debug(f"SHA_CACHE: STALE: {path}")
+    else:
+        logger.debug(f"SHA_CACHE: MISS: {path} ({sha_path})")
 
     if sha is None:
         sha = hashlib.sha256(path.read_bytes()).hexdigest()
