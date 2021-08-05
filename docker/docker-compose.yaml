@@ -2,7 +2,8 @@
 # configuring the production build
 services:
   prod:
-    image: release-hatch-prod
+    # image name, both locally and public
+    image: release-hatch
     build:
       context: ..
       # path relative to context
@@ -37,15 +38,17 @@ services:
         service: prod
     image: release-hatch-dev
     container_name: release-hatch-dev
-    # running as a specific user id allows files written to mounted volumes by
-    # the docker container's default user to match the host uid, for convienience.
-    user: ${DOCKER_USERID:-1000}
+    # running as a specific uid/gid allows files written to mounted volumes by
+    # the docker container's default user to match the host user's uid/gid, for
+    # convienience.
+    user: ${DOCKER_USERID:-1000}:${DOCKER_GROUPID:-1000}
     build:
       # the dev stage in the Dockerfile
       target: release-hatch-dev
-      # pass the user id as build arg (default to 1000)
+      # pass the uid/gid as build arg
       args:
         - USERID=${DOCKER_USERID:-1000}
+        - GROUPID=${DOCKER_GROUPID:-1000}
     # paths relative to docker-compose.yaml file
     env_file:
       - ../.env
