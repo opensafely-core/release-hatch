@@ -20,7 +20,7 @@ app = FastAPI()
 # Allow SPA to access these files
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[config.API_SERVER],
+    allow_origins=[config.JOB_SERVER_ENDPOINT],
     # credentials here is cookies, we don't use them
     allow_credentials=False,
     # allow caching for 1 hour
@@ -38,12 +38,12 @@ api_key_header = APIKeyHeader(name="Authorization")
 
 def reverse_url(view_name, **kwargs):
     path = app.url_path_for(view_name, **kwargs)
-    return config.SERVER_HOST.rstrip("/") + path
+    return config.RELEASE_HOST.rstrip("/") + path
 
 
 def validate(request: Request, auth_token: str = Security(api_key_header)):
     try:
-        token = AuthToken.verify(auth_token, config.BACKEND_TOKEN, "hatch")
+        token = AuthToken.verify(auth_token, config.JOB_SERVER_TOKEN, "hatch")
     except AuthToken.Expired as exc:
         logger.info(str(exc))
         raise HTTPException(401, "Unauthorized")
@@ -58,7 +58,7 @@ def validate(request: Request, auth_token: str = Security(api_key_header)):
     # 1) Validating the FQDN prevents possibly use of this token in a different context
     # 2) All urls start with /workspace/{workspace}/, so it effectively
     #    constrains a token to a workspace
-    public_url = config.SERVER_HOST + request.url.path
+    public_url = config.RELEASE_HOST + request.url.path
     if not public_url.startswith(token.url):
         logger.info(
             f"token url '{token.url}' did not match public request url '{public_url}'"
@@ -121,7 +121,10 @@ async def workspace_file(
 
     # FastAPI supports async file responses
     return FileResponse(
-        path, headers={"Content-Security-Policy": f"frame-src: {config.API_SERVER};"}
+        path,
+        headers={
+            "Content-Security-Policy": f"frame-src: {config.JOB_SERVER_ENDPOINT};"
+        },
     )
 
 
@@ -184,7 +187,10 @@ async def release_file(
         raise HTTPException(404, f"File {filename} not found in release {release_id}")
 
     return FileResponse(
-        path, headers={"Content-Security-Policy": f"frame-src: {config.API_SERVER};"}
+        path,
+        headers={
+            "Content-Security-Policy": f"frame-src: {config.JOB_SERVER_ENDPOINT};"
+        },
     )
 
 

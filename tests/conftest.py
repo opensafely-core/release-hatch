@@ -5,9 +5,9 @@ import pytest
 
 
 # force testing config
-os.environ["BACKEND_TOKEN"] = secrets.token_hex(32)
-os.environ["SERVER_HOST"] = "http://testserver"
-os.environ["API_SERVER"] = "https://jobs.opensafely.org"
+os.environ["JOB_SERVER_TOKEN"] = secrets.token_hex(32)
+os.environ["RELEASE_HOST"] = "http://testserver"
+os.environ["JOB_SERVER_ENDPOINT"] = "https://jobs.opensafely.org"
 
 # now we can import hatch stuff
 from hatch import config  # noqa: E402

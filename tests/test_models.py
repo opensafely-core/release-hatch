@@ -117,7 +117,7 @@ def test_validate_release_valid(workspace):
 
 def test_create_release(workspace, httpx_mock):
     httpx_mock.add_response(
-        url=config.API_SERVER + "/api/v2/releases/workspace/workspace",
+        url=config.JOB_SERVER_ENDPOINT + "/api/v2/releases/workspace/workspace",
         method="POST",
         status_code=201,
         headers={"Location": "https://url", "Release-Id": "id"},
@@ -145,7 +145,7 @@ def test_create_release(workspace, httpx_mock):
 
 def test_create_release_error(workspace, httpx_mock):
     httpx_mock.add_response(
-        url=config.API_SERVER + "/api/v2/releases/workspace/workspace",
+        url=config.JOB_SERVER_ENDPOINT + "/api/v2/releases/workspace/workspace",
         method="POST",
         status_code=400,
         json={"detail": "error"},

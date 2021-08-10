@@ -25,19 +25,19 @@ def auth_token(path, user="user", expiry=None):
 def auth_headers(workspace="workspace", user="user", expiry=None):
     """Helper to create valid authentication headers for a specific workspace"""
     token = auth_token(f"/workspace/{workspace}", user, expiry)
-    return {"Authorization": token.sign(config.BACKEND_TOKEN, "hatch")}
+    return {"Authorization": token.sign(config.JOB_SERVER_TOKEN, "hatch")}
 
 
 def test_cors():
     response = client.options(
         "/workspace/workspace/current",
         headers={
-            "Origin": config.API_SERVER,
+            "Origin": config.JOB_SERVER_ENDPOINT,
             "Access-Control-Request-Method": "GET",
         },
     )
     assert response.headers["Access-Control-Allow-Methods"] == "GET, HEAD, POST"
-    assert response.headers["Access-Control-Allow-Origin"] == config.API_SERVER
+    assert response.headers["Access-Control-Allow-Origin"] == config.JOB_SERVER_ENDPOINT
     assert response.headers["Access-Control-Max-Age"] == "3200"
     assert "Authorization" in response.headers["access-control-allow-headers"]
 
@@ -68,7 +68,7 @@ def test_validate_invalid_token_values():
             user="user",
             expiry=datetime.now(timezone.utc) + timedelta(hours=1),
         ),
-        config.BACKEND_TOKEN,
+        config.JOB_SERVER_TOKEN,
         salt="hatch",
     )
 
@@ -88,7 +88,7 @@ def test_validate_expired_token():
             user="user",
             expiry=datetime.now(timezone.utc) - timedelta(hours=1),
         ),
-        key=config.BACKEND_TOKEN,
+        key=config.JOB_SERVER_TOKEN,
         salt="hatch",
     )
     response = client.get(url, headers={"Authorization": token})
@@ -162,7 +162,7 @@ def test_file_api(workspace):
     assert response.content == b"test"
     assert (
         response.headers["Content-Security-Policy"]
-        == f"frame-src: {config.API_SERVER};"
+        == f"frame-src: {config.JOB_SERVER_ENDPOINT};"
     )
 
 
@@ -201,7 +201,7 @@ def test_workspace_release_workspace_bad_sha(workspace):
 
 def test_workspace_release_success(workspace, httpx_mock):
     httpx_mock.add_response(
-        url=config.API_SERVER + "/api/v2/releases/workspace/workspace",
+        url=config.JOB_SERVER_ENDPOINT + "/api/v2/releases/workspace/workspace",
         method="POST",
         status_code=201,
         headers={"Location": "https://url", "Release-Id": "id"},
@@ -307,7 +307,7 @@ def test_release_file_api(release):
     assert response.content == b"test"
     assert (
         response.headers["Content-Security-Policy"]
-        == f"frame-src: {config.API_SERVER};"
+        == f"frame-src: {config.JOB_SERVER_ENDPOINT};"
     )
 
 
@@ -337,7 +337,7 @@ def test_release_file_upload_bad_file(release):
 
 def test_release_file_upload(release, httpx_mock):
     httpx_mock.add_response(
-        url=config.API_SERVER + f"/api/v2/releases/release/{release.id}",
+        url=config.JOB_SERVER_ENDPOINT + f"/api/v2/releases/release/{release.id}",
         method="POST",
         status_code=201,
         headers={"Location": "https://url", "File-Id": "id"},

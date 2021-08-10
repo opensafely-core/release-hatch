@@ -9,7 +9,7 @@ from hatch import api_client, config, schema
 
 def test_create_release(httpx_mock):
     httpx_mock.add_response(
-        url=config.API_SERVER + "/api/v2/releases/workspace/workspace",
+        url=config.JOB_SERVER_ENDPOINT + "/api/v2/releases/workspace/workspace",
         method="POST",
         status_code=201,
         headers={
@@ -31,13 +31,13 @@ def test_create_release(httpx_mock):
 
     request = httpx_mock.get_request()
     assert request.headers["OS-User"] == "user"
-    assert request.headers["Authorization"] == config.BACKEND_TOKEN
+    assert request.headers["Authorization"] == config.JOB_SERVER_TOKEN
     assert json.loads(request.read()) == {"files": {"file.txt": "sha"}}
 
 
 def test_create_release_error(httpx_mock):
     httpx_mock.add_response(
-        url=config.API_SERVER + "/api/v2/releases/workspace/workspace",
+        url=config.JOB_SERVER_ENDPOINT + "/api/v2/releases/workspace/workspace",
         method="POST",
         status_code=400,
         json={"detail": "error"},
@@ -62,7 +62,7 @@ def test_create_release_error(httpx_mock):
 
 def test_upload_file(httpx_mock, tmp_path):
     httpx_mock.add_response(
-        url=config.API_SERVER + "/api/v2/releases/release/release_id",
+        url=config.JOB_SERVER_ENDPOINT + "/api/v2/releases/release/release_id",
         method="POST",
         status_code=201,
         headers={
@@ -81,7 +81,7 @@ def test_upload_file(httpx_mock, tmp_path):
 
     request = httpx_mock.get_request()
     assert request.headers["OS-User"] == "user"
-    assert request.headers["Authorization"] == config.BACKEND_TOKEN
+    assert request.headers["Authorization"] == config.JOB_SERVER_TOKEN
     assert (
         request.headers["Content-Disposition"]
         == 'attachment; filename="output/file.txt"'
@@ -91,7 +91,7 @@ def test_upload_file(httpx_mock, tmp_path):
 
 def test_upload_file_error(httpx_mock, tmp_path):
     httpx_mock.add_response(
-        url=config.API_SERVER + "/api/v2/releases/release/release_id",
+        url=config.JOB_SERVER_ENDPOINT + "/api/v2/releases/release/release_id",
         method="POST",
         status_code=400,
         json={"detail": "error"},

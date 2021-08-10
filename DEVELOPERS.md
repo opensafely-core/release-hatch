@@ -65,5 +65,5 @@ WORKSPACE.
 
 ## Communicate with local job-runner
 
-You will need to set your `BACKEND_TOKEN` value in .env to match the token value in
+You will need to set your `JOB_SERVER_TOKEN` value in .env to match the token value in
 job-server and restart.
