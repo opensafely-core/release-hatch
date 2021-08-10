@@ -15,9 +15,11 @@ else:  # pragma: no cover
     CACHE = Path(CACHE)
     assert CACHE.exists()
 
-BACKEND_TOKEN = os.environ.get("BACKEND_TOKEN")
-assert BACKEND_TOKEN
+JOB_SERVER_TOKEN = os.environ.get("JOB_SERVER_TOKEN")
+assert JOB_SERVER_TOKEN
 BACKEND = os.environ.get("BACKEND", "test-backend")
 
-API_SERVER = os.environ.get("API_SERVER", "https://jobs.opensafely.org")
-SERVER_HOST = os.environ.get("SERVER_HOST")
+JOB_SERVER_ENDPOINT = os.environ.get(
+    "JOB_SERVER_ENDPOINT", "https://jobs.opensafely.org"
+)
+RELEASE_HOST = os.environ.get("RELEASE_HOST")

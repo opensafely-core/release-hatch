@@ -6,7 +6,8 @@ from hatch import config
 
 # using a module level client should keep the connection open to job-server
 client = httpx.Client(
-    base_url=config.API_SERVER, headers={"Authorization": config.BACKEND_TOKEN}
+    base_url=config.JOB_SERVER_ENDPOINT,
+    headers={"Authorization": config.JOB_SERVER_TOKEN},
 )
 
 
@@ -66,7 +67,7 @@ def _proxy_headers(orig_headers):
     for header in ["Connection", "Server"]:
         headers.pop(header, None)
     # add in proxy info
-    headers["Via"] = config.SERVER_HOST
+    headers["Via"] = config.RELEASE_HOST
     return headers
 
 
