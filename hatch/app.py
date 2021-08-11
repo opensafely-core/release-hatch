@@ -94,7 +94,7 @@ async def aioexists(path):
         return True
 
 
-@app.get("/workspace/{workspace}/current/", response_model=schema.IndexSchema)
+@app.get("/workspace/{workspace}/current", response_model=schema.IndexSchema)
 def workspace_index(
     workspace: str, request: Request, token: AuthToken = Depends(validate)
 ):
@@ -128,7 +128,7 @@ async def workspace_file(
     )
 
 
-@app.post("/workspace/{workspace}/release/")
+@app.post("/workspace/{workspace}/release")
 def workspace_release(
     workspace: str,
     release: schema.Release,
