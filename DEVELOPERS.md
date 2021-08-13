@@ -53,14 +53,23 @@ This will run the server on the port configured
 You can now go to `http://127.0.0:8001/docs` do examine and try the API.
 
 
-## Generate token
+## Test client
 
-If you need a test token to access the APIs, you can run:
+### Generate auth token
 
-just token WORKSPACE
+    just client token -w WORKSPACE
 
-This will output a token that can be used to access urls for workspace
-WORKSPACE.
+### View index API response
+
+    just client index -w WORKSPACE [-r RELEASE_ID]
+
+### Download file
+
+    just client file -w WORKSPACE [-r RELEASE_ID] -f file/name.txt
+
+### Run basic integration test
+
+    just client test
 
 
 ## Communicate with local job-runner

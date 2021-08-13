@@ -1,4 +1,6 @@
+import logging
 import os
+import sys
 from pathlib import Path
 
 
@@ -23,3 +25,16 @@ JOB_SERVER_ENDPOINT = os.environ.get(
     "JOB_SERVER_ENDPOINT", "https://jobs.opensafely.org"
 )
 RELEASE_HOST = os.environ.get("RELEASE_HOST")
+
+DEBUG_LEVEL = os.environ.get("DEBUG", "info")
+
+
+def setup_logging():
+    logger = logging.getLogger("hatch")
+    logger.setLevel(logging.getLevelName(DEBUG_LEVEL.upper()))
+    handler = logging.StreamHandler(sys.stdout)
+    # if running under uvicorn, reuse it's formatter
+    uvicorn_handlers = logging.getLogger("uvicorn").handlers
+    if uvicorn_handlers:  # pragma: no cover
+        handler.setFormatter(uvicorn_handlers[0].formatter)
+    logger.addHandler(handler)
