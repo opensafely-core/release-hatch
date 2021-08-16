@@ -237,9 +237,9 @@ pytest-coverage==0.0 \
     --hash=sha256:db6af2cbd7e458c7c9fd2b4207cee75258243c8a81cad31a7ee8cfad5be93c05 \
     --hash=sha256:dedd084c5e74d8e669355325916dc011539b190355021b037242514dee546368
     # via -r requirements.dev.in
-pytest-httpx==0.12.0 \
-    --hash=sha256:1e135b8779060091fa1c87d8aff7904921e8bea95fce5e971a0262764d064b12 \
-    --hash=sha256:e262932f2d3ce380da8273c7bacbcfdc2c94e167fa94da29571caaf1f4d3ba27
+pytest-httpx==0.12.1 \
+    --hash=sha256:703433f65951bde6e08d4b1d8956f8f9dec4b3046c2805414e40adb87908ee7f \
+    --hash=sha256:8c16ff2abba4fc535a505e1df6dab61794bcefde8e7e6a106a366ffc3a04dcc5
     # via -r requirements.dev.in
 pyyaml==5.4.1 \
     --hash=sha256:08682f6b72c722394747bddaf0aa62277e02557c0fd1c42cb853016a38f8dedf \
