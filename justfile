@@ -112,12 +112,13 @@ fix: devenv
 # Run the dev project
 run:
     #!/usr/bin/env bash
-    port=$(echo $SERVER_HOST | awk -F: '{print $3}' | tr -d / )
+    port=$(echo $RELEASE_HOST | awk -F: '{print $3}' | tr -d / )
     $BIN/uvicorn hatch.app:app --reload --port $port
 
 
-token WORKSPACE="workspace":
-    $BIN/python dev-token.py "{{ WORKSPACE }}"
+# Run the test client
+client *ARGS:
+    @PTHONPATH=. $BIN/python ./hatch/client.py {{ ARGS }}
 
 
 # build docker image env=dev|prod

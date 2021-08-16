@@ -13,9 +13,10 @@ from hatch import config, models, schema
 from hatch.signing import AuthToken
 
 
-logger = logging.Logger(__name__)
-
+config.setup_logging()
+logger = logging.getLogger(__name__)
 app = FastAPI()
+
 
 # Allow SPA to access these files
 app.add_middleware(
@@ -45,13 +46,13 @@ def validate(request: Request, auth_token: str = Security(api_key_header)):
     try:
         token = AuthToken.verify(auth_token, config.JOB_SERVER_TOKEN, "hatch")
     except AuthToken.Expired as exc:
-        logger.info(str(exc))
+        logger.info(f"auth expired: {exc.__class__}: {exc} ({auth_token})")
         raise HTTPException(401, "Unauthorized")
     except AuthToken.BadSignature as exc:
-        logger.info(str(exc))
+        logger.info(f"auth signing failed: {exc.__class__}: {exc} ({auth_token})")
         raise HTTPException(403, "Forbbiden")
     except ValidationError as exc:
-        logger.info(str(exc))
+        logger.info(f"auth failed: {exc.__class__}: {exc} ({auth_token})")
         raise HTTPException(403, "Forbidden")
 
     # We validate the full url prefix for 2 reasons:

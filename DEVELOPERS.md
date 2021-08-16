@@ -53,14 +53,43 @@ This will run the server on the port configured
 You can now go to `http://127.0.0:8001/docs` do examine and try the API.
 
 
-## Generate token
+## Test client
 
-If you need a test token to access the APIs, you can run:
+The test client is a developer tool to test a locally running release-hatch
+server, and uses the same configuration as the running service. It can be used
+to exercise the APIs release-hatch provides. It automatically generates the
+appropriate auth tokens using the service config.
 
-just token WORKSPACE
+### Generate auth token
 
-This will output a token that can be used to access urls for workspace
-WORKSPACE.
+This can be useful if you are manually testing urls with curl, for example.
+
+    just client token -w WORKSPACE
+
+### View index API response
+
+Get the index API response for a workspace or release.
+
+    just client index -w WORKSPACE [-r RELEASE_ID]
+
+### Download file
+
+Download a specific file from a workspace or release.
+
+    just client file -w WORKSPACE [-r RELEASE_ID] -f file/name.txt
+
+### Run basic integration test
+
+This creates some files in a temporary workspace which is deleted after the
+test run. It creates a release for that workspace, and checks the the index and
+files APIs work correctly for both the workspace and the release.  It is run by
+default as a part of the test suite, as well as used as part of our deployment
+tooling testing.
+
+    just client test
+
+Note: it does not test the release creation or file upload APIs, currently, but
+may do in future.
 
 
 ## Communicate with local job-runner
