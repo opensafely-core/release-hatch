@@ -24,7 +24,7 @@ just #  shortcut for just --list
 
 Set up a local development environment with:
 ```
-just dev_setup
+just devenv
 ```
 
 ## Tests
