@@ -26,6 +26,9 @@ JOB_SERVER_ENDPOINT = os.environ.get(
 )
 RELEASE_HOST = os.environ.get("RELEASE_HOST")
 
+# used for CORS checking, defaults to job server but is overridable
+SPA_ORIGIN = os.environ.get("SPA_ORIGIN", "https://jobs.opensafely.org")
+
 DEBUG_LEVEL = os.environ.get("DEBUG", "info")
 
 

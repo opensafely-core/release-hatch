@@ -21,7 +21,7 @@ app = FastAPI()
 # Allow SPA to access these files
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[config.JOB_SERVER_ENDPOINT],
+    allow_origins=[config.SPA_ORIGIN],
     # credentials here is cookies, we don't use them
     allow_credentials=False,
     # allow caching for 1 hour
