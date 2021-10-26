@@ -10,7 +10,7 @@ from hatch import api_client, config, schema
 
 def test_create_release(httpx_mock):
     httpx_mock.add_response(
-        url=config.JOB_SERVER_ENDPOINT + "/api/v2/releases/workspace/workspace",
+        url=config.JOB_SERVER_ENDPOINT + "/releases/workspace/workspace",
         method="POST",
         status_code=201,
         headers={
@@ -40,7 +40,7 @@ def test_create_release(httpx_mock):
 
 def test_create_release_error(httpx_mock):
     httpx_mock.add_response(
-        url=config.JOB_SERVER_ENDPOINT + "/api/v2/releases/workspace/workspace",
+        url=config.JOB_SERVER_ENDPOINT + "/releases/workspace/workspace",
         method="POST",
         status_code=400,
         json={"detail": "error"},
@@ -67,7 +67,7 @@ def test_create_release_error(httpx_mock):
 
 def test_upload_file(httpx_mock, tmp_path):
     httpx_mock.add_response(
-        url=config.JOB_SERVER_ENDPOINT + "/api/v2/releases/release/release_id",
+        url=config.JOB_SERVER_ENDPOINT + "/releases/release/release_id",
         method="POST",
         status_code=201,
         headers={
@@ -98,7 +98,7 @@ def test_upload_file(httpx_mock, tmp_path):
 
 def test_upload_file_error(httpx_mock, tmp_path):
     httpx_mock.add_response(
-        url=config.JOB_SERVER_ENDPOINT + "/api/v2/releases/release/release_id",
+        url=config.JOB_SERVER_ENDPOINT + "/releases/release/release_id",
         method="POST",
         status_code=400,
         json={"detail": "error"},

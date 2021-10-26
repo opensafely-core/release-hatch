@@ -35,7 +35,7 @@ def create_release(workspace, release, user):
     response object, so we can send it straight to the client.
     """
     response = client.post(
-        url=f"/api/v2/releases/workspace/{workspace}",
+        url=f"/releases/workspace/{workspace}",
         content=release.json(),
         headers={
             "OS-User": user,
@@ -57,7 +57,7 @@ def upload_file(release_id, name, path, user):
     response object, so we can send it straight to the client.
     """
     response = client.post(
-        url=f"/api/v2/releases/release/{release_id}",
+        url=f"/releases/release/{release_id}",
         content=path.read_bytes(),
         headers={
             "OS-User": user,
