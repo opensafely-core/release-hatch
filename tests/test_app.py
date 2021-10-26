@@ -204,7 +204,12 @@ def test_workspace_release_success(workspace, httpx_mock):
         url=config.JOB_SERVER_ENDPOINT + "/api/v2/releases/workspace/workspace",
         method="POST",
         status_code=201,
-        headers={"Location": "https://url", "Release-Id": "id"},
+        headers={
+            "Location": "https://url",
+            "Release-Id": "id",
+            "Content-Length": "100",
+            "Content-Type": "application/json",
+        },
     )
     workspace.write("output/file.txt", "test")
 
@@ -340,7 +345,12 @@ def test_release_file_upload(release, httpx_mock):
         url=config.JOB_SERVER_ENDPOINT + f"/api/v2/releases/release/{release.id}",
         method="POST",
         status_code=201,
-        headers={"Location": "https://url", "File-Id": "id"},
+        headers={
+            "Location": "https://url",
+            "File-Id": "id",
+            "Content-Length": "100",
+            "Content-Type": "application/json",
+        },
     )
     release.write("output/file.txt", "test")
 

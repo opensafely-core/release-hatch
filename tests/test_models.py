@@ -120,7 +120,12 @@ def test_create_release(workspace, httpx_mock):
         url=config.JOB_SERVER_ENDPOINT + "/api/v2/releases/workspace/workspace",
         method="POST",
         status_code=201,
-        headers={"Location": "https://url", "Release-Id": "id"},
+        headers={
+            "Location": "https://url",
+            "Release-Id": "id",
+            "Content-Length": "100",
+            "Content-Type": "application/json",
+        },
     )
 
     workspace.write("output/file.txt", "test")

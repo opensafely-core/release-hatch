@@ -17,6 +17,8 @@ def test_create_release(httpx_mock):
             "Release-Id": "id",
             "Connection": "close",
             "Server": "server",
+            "Content-Length": "100",
+            "Content-Type": "application/json",
         },
     )
 
@@ -45,6 +47,8 @@ def test_create_release_error(httpx_mock):
             "Some-Header": "value",
             "Connection": "close",
             "Server": "server",
+            "Content-Length": "100",
+            "Content-Type": "application/json",
         },
     )
 
@@ -68,6 +72,8 @@ def test_upload_file(httpx_mock, tmp_path):
         headers={
             "Location": "https://url",
             "File-Id": "file-id",
+            "Content-Length": "100",
+            "Content-Type": "application/json",
         },
     )
 
