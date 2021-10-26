@@ -1,13 +1,27 @@
+import logging
+
 import httpx
 from fastapi import HTTPException, Response
 
 from hatch import config
 
 
+logger = logging.getLogger(__name__)
+
+
+def log_response(resp):
+    req = resp._request
+    h = resp.headers
+    logger.info(
+        f"f{req.method} f{req.url}: status={resp.status_code} size={h['Content-Length']} type={h['Content-Type']}"
+    )
+
+
 # using a module level client should keep the connection open to job-server
 client = httpx.Client(
     base_url=config.JOB_SERVER_ENDPOINT,
     headers={"Authorization": config.JOB_SERVER_TOKEN},
+    event_hooks={"response": [log_response]},
 )
 
 
@@ -27,6 +41,7 @@ def create_release(workspace, release, user):
         },
     )
     if response.status_code != 201:
+        logger.debug(f"request body: {release.json()}")
         raise proxy_httpx_error(response)
 
     return proxy_httpx_response(response)
@@ -49,6 +64,7 @@ def upload_file(release_id, name, path, user):
         },
     )
     if response.status_code != 201:
+        logger.debug(f"request body: {path}")
         raise proxy_httpx_error(response)
 
     return proxy_httpx_response(response)
@@ -82,10 +98,18 @@ def proxy_httpx_response(response):
 
 def proxy_httpx_error(response):
     """Take an upstream httpx response and convert to a proxied FastAPI HTTPException."""
+    # either it is json from job-server, or its html from nginx
     try:
         detail = response.json()["detail"]
     except Exception:
         detail = response.content.decode("utf8")
+
+    headers = " ".join("{k}={v}" for k, v in response.headers.items())
+    logger.error(f"headers: {headers}")
+    if len(detail) <= 2048:
+        logger.error(f"body:\n{detail}")
+    else:  # pragma: no cover
+        logger.error("body (truncated):\n{body[:2048]}")
 
     return HTTPException(
         status_code=response.status_code,
