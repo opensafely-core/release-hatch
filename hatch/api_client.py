@@ -85,7 +85,7 @@ def proxy_httpx_error(response):
     try:
         detail = response.json()["detail"]
     except Exception:
-        detail = response.content
+        detail = response.content.decode("utf8")
 
     return HTTPException(
         status_code=response.status_code,

@@ -115,4 +115,4 @@ def test_proxy_httpx_error_bad_json(httpx_mock):
     )
     exc = api_client.proxy_httpx_error(response)
     assert exc.status_code == 400
-    assert exc.detail == b"{}"
+    assert exc.detail == "{}"
