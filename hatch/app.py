@@ -1,7 +1,7 @@
 import logging
 from functools import partial
 
-import aiofiles
+import aiofiles.os
 from fastapi import Depends, FastAPI, HTTPException, Security
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
