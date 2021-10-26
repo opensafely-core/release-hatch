@@ -12,9 +12,12 @@ logger = logging.getLogger(__name__)
 def log_response(resp):
     req = resp._request
     h = resp.headers
-    logger.info(
-        f"f{req.method} f{req.url}: status={resp.status_code} size={h['Content-Length']} type={h['Content-Type']}"
-    )
+    extra = []
+    if "Content-Length" in h:
+        extra.append(f"size={h['Content-Length']}")
+    if "Content-Type" in h:
+        extra.append(f"type={h['Content-Type']}")
+    logger.info(f"{req.method} {req.url}: status={resp.status_code} {' '.join(extra)}")
 
 
 # using a module level client should keep the connection open to job-server

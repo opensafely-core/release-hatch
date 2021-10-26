@@ -1,4 +1,5 @@
 import json
+import logging
 
 import httpx
 import pytest
@@ -114,7 +115,7 @@ def test_upload_file_error(httpx_mock, tmp_path):
     assert response.detail == "error"
 
 
-def test_proxy_httpx_error_bad_json(httpx_mock):
+def test_proxy_httpx_error_bad_json():
     response = httpx.Response(
         status_code=400,
         json={},
@@ -122,3 +123,31 @@ def test_proxy_httpx_error_bad_json(httpx_mock):
     exc = api_client.proxy_httpx_error(response)
     assert exc.status_code == 400
     assert exc.detail == "{}"
+
+
+def test_client_logs_message(httpx_mock, caplog):
+    caplog.set_level(logging.DEBUG)
+    # no headers
+    url = "http://test.com/path"
+    httpx_mock.add_response(url=url, method="POST", status_code=200)
+
+    api_client.client.post(url)
+
+    assert caplog.records[-1].msg == f"POST {url}: status=200 "
+
+    httpx_mock.add_response(
+        url=url,
+        method="POST",
+        status_code=200,
+        headers={
+            "Content-Length": "10",
+            "Content-Type": "application/json",
+        },
+    )
+
+    api_client.client.post(url)
+
+    assert (
+        caplog.records[-1].msg
+        == f"POST {url}: status=200 size=10 type=application/json"
+    )
