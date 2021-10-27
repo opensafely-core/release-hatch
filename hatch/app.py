@@ -123,9 +123,7 @@ async def workspace_file(
     # FastAPI supports async file responses
     return FileResponse(
         path,
-        headers={
-            "Content-Security-Policy": f"frame-src: {config.JOB_SERVER_ENDPOINT};"
-        },
+        headers={"Content-Security-Policy": f"frame-src: {config.SPA_ORIGIN};"},
     )
 
 
