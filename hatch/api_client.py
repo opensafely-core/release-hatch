@@ -56,9 +56,18 @@ def upload_file(release_id, name, path, user):
     We return job server's response, but mapped from httpx to a fastapi
     response object, so we can send it straight to the client.
     """
+
+    def upload_bytes():
+        with path.open("rb") as f:
+            while True:
+                data = f.read(8192)
+                if not data:
+                    break
+                yield data
+
     response = client.post(
         url=f"/releases/release/{release_id}",
-        content=path.read_bytes(),
+        content=upload_bytes(),
         headers={
             "OS-User": user,
             "Content-Disposition": f'attachment; filename="{name}"',
