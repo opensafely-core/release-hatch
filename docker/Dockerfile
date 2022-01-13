@@ -93,7 +93,7 @@ WORKDIR /app
 VOLUME /app
 VOLUME /workspaces
 
-# This may not be nessecary, but it probably doesn't hurt
+# This may not be necessary, but it probably doesn't hurt
 ENV PYTHONPATH=/app
 
 # switch to running as the user
