@@ -4,9 +4,9 @@
 #
 #    pip-compile --allow-unsafe --generate-hashes --output-file=requirements.prod.txt requirements.prod.in
 #
-aiofiles==0.7.0 \
-    --hash=sha256:a1c4fc9b2ff81568c83e21392a82f344ea9d23da906e4f6a52662764545e19d4 \
-    --hash=sha256:c67a6823b5f23fcab0a2595a289cec7d8c863ffcb4322fb8cd6b90400aedfdbc
+aiofiles==0.8.0 \
+    --hash=sha256:7a973fc22b29e9962d0897805ace5856e6a566ab1f0c8e5c91ff6c866519c937 \
+    --hash=sha256:8334f23235248a3b2e83b2c3a78a22674f39969b96397126cc93664d9a901e59
     # via -r requirements.prod.in
 anyio==3.2.1 \
     --hash=sha256:07968db9fa7c1ca5435a133dc62f988d84ef78e1d9b22814a59d1c62618afbc5 \
