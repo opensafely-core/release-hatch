@@ -116,7 +116,7 @@ def proxy_httpx_error(response):
     except Exception:
         detail = response.content.decode("utf8")
 
-    headers = " ".join("{k}={v}" for k, v in response.headers.items())
+    headers = " ".join(f"{k}={v}" for k, v in response.headers.items())
     logger.error(f"headers: {headers}")
     if len(detail) <= 2048:
         logger.error(f"body:\n{detail}")

@@ -35,7 +35,12 @@ def fetch_index(token, workspace, release_id=None):
         kwargs["release_id"] = release_id
     else:
         view_name = "workspace_index"
-    resp = requests.get(app.reverse_url(view_name, **kwargs), headers=headers)
+
+    # generate url
+    path = app.app.url_path_for(view_name, **kwargs)
+    url = path.make_absolute_url(base_url=config.RELEASE_HOST)
+
+    resp = requests.get(url, headers=headers)
     resp.raise_for_status()
     return resp.json()
 

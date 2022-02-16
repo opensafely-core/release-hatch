@@ -37,11 +37,6 @@ app.add_middleware(
 api_key_header = APIKeyHeader(name="Authorization")
 
 
-def reverse_url(view_name, **kwargs):
-    path = app.url_path_for(view_name, **kwargs)
-    return config.RELEASE_HOST.rstrip("/") + path
-
-
 def validate(request: Request, auth_token: str = Security(api_key_header)):
     try:
         token = AuthToken.verify(auth_token, config.JOB_SERVER_TOKEN, "hatch")
@@ -104,7 +99,7 @@ def workspace_index(
 
     # prepare a function for the index function to construct URLs to the
     # correct file endpoint
-    url_builder = partial(reverse_url, "workspace_file", workspace=workspace)
+    url_builder = partial(request.url_for, "workspace_file", workspace=workspace)
 
     return models.get_index(path, url_builder)
 
@@ -129,6 +124,7 @@ async def workspace_file(
 
 @app.post("/workspace/{workspace}/release")
 def workspace_release(
+    request: Request,
     workspace: str,
     release: schema.Release,
     token: AuthToken = Depends(validate),
@@ -145,7 +141,7 @@ def workspace_release(
 
     # rewrite location header to point to our upload endpoint, so that clients
     # will know where to post their upload requests to.
-    response.headers["Location"] = reverse_url(
+    response.headers["Location"] = request.url_for(
         "release_file_upload", workspace=workspace, release_id=release_id
     )
     return response
@@ -165,7 +161,7 @@ def release_index(
     # prepare a function for the index function to construct URLs to the
     # correct file endpoint
     url_builder = partial(
-        reverse_url,
+        request.url_for,
         "release_file",
         workspace=workspace,
         release_id=release_id,
