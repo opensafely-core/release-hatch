@@ -1,3 +1,5 @@
+set dotenv-load := true
+
 export DOCKER_USERID := `id -u`
 export DOCKER_GROUPID := `id -g`
 
