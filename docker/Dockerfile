@@ -90,8 +90,6 @@ ENV VIRTUAL_ENV=/opt/venv/ PATH="/opt/venv/bin:$PATH"
 
 RUN mkdir /app
 WORKDIR /app
-VOLUME /app
-VOLUME /workspaces
 
 # This may not be necessary, but it probably doesn't hurt
 ENV PYTHONPATH=/app
