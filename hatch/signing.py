@@ -7,6 +7,7 @@
 # file into your project.
 import hashlib
 from datetime import datetime, timezone
+from urllib.parse import urlparse
 
 import itsdangerous
 from pydantic import BaseModel, Field, root_validator, validator
@@ -84,10 +85,15 @@ class AuthToken(BaseModel):
 
     @validator("url")
     def check_url(cls, url):
-        """Enforce that we need a fully qualified url."""
-        if url.startswith(("http://", "https://")):
-            return url
-        raise ValueError(f"Invalid url '{url}'")
+        """Enforce that we need a url with scheme, hostname and path."""
+        try:
+            parsed = urlparse(url)
+            assert parsed.scheme in ("http", "https"), "Invalid scheme"
+            assert parsed.hostname, "No hostname"
+        except Exception as exc:
+            raise ValueError(f"Invalid url '{url}': {exc}")
+
+        return url
 
     @validator("expiry")
     def check_expiry(cls, expiry):

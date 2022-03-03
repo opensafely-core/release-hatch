@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urljoin
 
@@ -11,20 +12,22 @@ from tests.test_signing import create_raw_token
 client = TestClient(app.app)
 
 
-def auth_token(path, user="user", expiry=None):
+def auth_token(path, user="user", expiry=None, base_url=None):
     if expiry is None:  # pragma: no cover
         expiry = datetime.now(timezone.utc) + timedelta(hours=1)
+    if base_url is None:
+        base_url = client.base_url
 
     return signing.AuthToken(
-        url=urljoin(client.base_url, path),
+        url=urljoin(base_url, path),
         user=user,
         expiry=expiry,
     )
 
 
-def auth_headers(workspace="workspace", user="user", expiry=None):
+def auth_headers(workspace="workspace", user="user", expiry=None, base_url=None):
     """Helper to create valid authentication headers for a specific workspace"""
-    token = auth_token(f"/workspace/{workspace}", user, expiry)
+    token = auth_token(f"/workspace/{workspace}", user, expiry, base_url)
     return {"Authorization": token.sign(config.JOB_SERVER_TOKEN, "hatch")}
 
 
@@ -95,20 +98,39 @@ def test_validate_expired_token():
     assert response.status_code == 401
 
 
-def test_validate_url():
+def test_validate_url(caplog):
+    caplog.set_level(logging.DEBUG)
     headers = auth_headers()
     r1 = client.get("/workspace/workspace/current", headers=headers)
     # this means it was valid, but workspace did not exist
     assert r1.status_code == 404
 
     # test file url prefix
-    r2 = client.get("/workspace/workspace/current/output/file.txt", headers=headers)
+    r2 = client.get("/workspace/workspace/current/file.txt", headers=headers)
     # this means it was valid, but file did not exist
     assert r2.status_code == 404
 
-    r3 = client.get("/workspace/other/current/output/file.txt", headers=headers)
-    # the url and token url did not match
+    invalid_host = auth_headers(base_url="https://invalid.com/")
+    r3 = client.get("/workspace/workspace/current/file.txt", headers=invalid_host)
+    # the token hostname did not match
     assert r3.status_code == 403
+    assert (
+        caplog.records[-1].msg
+        == "Host invalid.com from 'https://invalid.com/workspace/workspace' did not match any of ('testserver', 'localhost')"
+    )
+
+    localhost = auth_headers(base_url="https://localhost/")
+    r4 = client.get("/workspace/workspace/current/file.txt", headers=localhost)
+    # this means it was valid, but file did not exist
+    assert r4.status_code == 404
+
+    r5 = client.get("/workspace/invalid/current/file.txt", headers=headers)
+    # the url and token url did not match
+    assert r5.status_code == 403
+    assert (
+        caplog.records[-1].msg
+        == "Request path /workspace/invalid/current/file.txt does not match token path /workspace/workspace"
+    )
 
 
 def test_index_api_bad_workspace():

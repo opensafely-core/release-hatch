@@ -1,5 +1,6 @@
 import logging
 from functools import partial
+from urllib.parse import urlparse
 
 import aiofiles.os
 from fastapi import Depends, FastAPI, HTTPException, Security
@@ -35,6 +36,7 @@ app.add_middleware(
 
 
 api_key_header = APIKeyHeader(name="Authorization")
+allowed_hosts = (urlparse(config.RELEASE_HOST).hostname, "localhost")
 
 
 def validate(request: Request, auth_token: str = Security(api_key_header)):
@@ -50,18 +52,30 @@ def validate(request: Request, auth_token: str = Security(api_key_header)):
         logger.info(f"auth failed: {exc.__class__}: {exc} ({auth_token})")
         raise HTTPException(403, "Forbidden")
 
-    # We validate the full url prefix for 2 reasons:
-    # 1) Validating the FQDN prevents possibly use of this token in a different context
-    # 2) All urls start with /workspace/{workspace}/, so it effectively
-    #    constrains a token to a workspace
-    public_url = config.RELEASE_HOST + request.url.path
-    if not public_url.startswith(token.url):
+    validate_url(token, request)
+
+    return token
+
+
+def validate_url(token, request):
+    signed_url = urlparse(token.url)
+
+    # We validate the FQDN in the token is valid for this server. We just
+    # validate the hostname, not the port, as in some backends things end up
+    # going via different ports because $REASONS
+    if signed_url.hostname not in allowed_hosts:
         logger.info(
-            f"token url '{token.url}' did not match public request url '{public_url}'"
+            f"Host {signed_url.hostname} from '{token.url}' did not match any of {allowed_hosts}"
         )
         raise HTTPException(403, "Forbidden")
 
-    return token
+    # Validate the token url is for the /workspace/{workspace}/ path requests
+    # This effectively constrains a token to a workspace
+    if not request.url.path.startswith(signed_url.path):
+        logger.info(
+            f"Request path {request.url.path} does not match token path {signed_url.path}",
+        )
+        raise HTTPException(403, "Forbidden")
 
 
 def validate_workspace(workspace):

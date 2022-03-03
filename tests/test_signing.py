@@ -34,13 +34,26 @@ def test_token_sign_verify_roundtrip(secret_key):
     assert token1 == token2
 
 
-def test_token_object_url_invalid():
-    with pytest.raises(ValidationError):
+@pytest.mark.parametrize(
+    "url,msg",
+    [
+        ("bad://host/path", "Invalid scheme"),
+        ("http://", "No hostname"),
+        ("", "Invalid scheme"),
+    ],
+)
+def test_token_object_url_invalid(url, msg, caplog):
+    with pytest.raises(ValidationError) as exc:
         signing.AuthToken(
-            url="bad",
+            url=url,
             user="user",
             expiry=datetime.now(timezone.utc) + timedelta(minutes=1),
         )
+
+    assert (
+        str(exc.value)
+        == f"1 validation error for AuthToken\nurl\n  Invalid url '{url}': {msg} (type=value_error)"
+    )
 
 
 def test_token_object_expired():
