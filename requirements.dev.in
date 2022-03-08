@@ -11,6 +11,6 @@ flake8-builtins
 flake8-implicit-str-concat
 isort
 pytest
-pytest-coverage
+pytest-cov
 pytest-httpx
 pip-tools
