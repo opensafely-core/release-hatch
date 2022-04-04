@@ -32,9 +32,9 @@ click==8.0.1 \
     --hash=sha256:8c04c11192119b1ef78ea049e0a6f0463e4c48ef00a30160c704337586f3ad7a \
     --hash=sha256:fba402a4a47334742d782209a7c79bc448911afe1149d07bdabdf480b3e2f4b6
     # via uvicorn
-fastapi==0.73.0 \
-    --hash=sha256:dcfee92a7f9a72b5d4b7ca364bd2b009f8fc10d95ed5769be20e94f39f7e5a15 \
-    --hash=sha256:f0a618aff5f6942862f2d3f20f39b1c037e33314d1b8207fd1c3a2cca76dfd8c
+fastapi==0.75.1 \
+    --hash=sha256:8b62bde916d657803fb60fffe88e2b2c9fb854583784607e4347681cae20ad01 \
+    --hash=sha256:f46f8fc81261c2bd956584114da9da98c84e2410c807bc2487532dabf55e7ab8
     # via -r requirements.prod.in
 h11==0.12.0 \
     --hash=sha256:36a3cb8c0a032f56e2da7084577878a035d3b61d104230d4bd49c0c6b555a9c6 \
