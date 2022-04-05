@@ -1,5 +1,23 @@
 # Notes for developers
 
+## Deployment
+
+### TPP
+release-hatch is deployed on L4 under `/d/release-hatch-2/`.
+It is running in a terminal under @ghickman's account via `./run.sh`.
+
+Should it break any other user _should_ be able to run the same command from the same directory.
+
+If `./run.sh` prints nothing back and exits with `1` then it's likely something is up with the virtualenv and recreating is likely the easiest first step:
+
+1. `cd /d/release-hatch-2/`
+1. `rm -rf venv`
+1. `python -m venv venv`
+1. `venv/Scripts/pip install -r requirements.prod.txt --no-index -f /d/windows-wheels/`
+
+This will remove the current virtualenv, create a new one, and install the requirements from the directory of wheels.
+
+
 ## System requirements
 
 ### just
