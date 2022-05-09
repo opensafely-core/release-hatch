@@ -217,9 +217,9 @@ pluggy==0.13.1 \
     --hash=sha256:15b2acde666561e1298d71b523007ed7364de07029219b604cf808bfa1c765b0 \
     --hash=sha256:966c145cd83c96502c3c3868f50408687b38434af77734af1e9ca461a4081d2d
     # via pytest
-pre-commit==2.17.0 \
-    --hash=sha256:725fa7459782d7bec5ead072810e47351de01709be838c2ce1726b9591dad616 \
-    --hash=sha256:c1a8040ff15ad3d648c70cc3e55b93e4d2d5b687320955505587fd79bbaed06a
+pre-commit==2.19.0 \
+    --hash=sha256:10c62741aa5704faea2ad69cb550ca78082efe5697d6f04e5710c3c229afdd10 \
+    --hash=sha256:4233a1e38621c87d9dda9808c6606d7e7ba0e087cd56d3fe03202a01d2919615
     # via -r requirements.dev.in
 py==1.10.0 \
     --hash=sha256:21b81bda15b66ef5e1a777a21c4dcd9c20ad3efd0b3f817e7a809035269e1bd3 \
@@ -314,13 +314,6 @@ tomli==1.2.0 \
     # via
     #   black
     #   pep517
-typing-extensions==3.10.0.0 \
-    --hash=sha256:0ac0f89795dd19de6b97debb0c6af1c70987fd80a2d62d1958f7e56fcc31b497 \
-    --hash=sha256:50b6f157849174217d0656f99dc82fe932884fb250826c18350e159ec6cdf342 \
-    --hash=sha256:779383f6086d90c99ae41cf0ff39aac8a7937a9283ce0a414e5dd782f4c94a84
-    # via
-    #   -c requirements.prod.txt
-    #   black
 virtualenv==20.6.0 \
     --hash=sha256:51df5d8a2fad5d1b13e088ff38a433475768ff61f202356bb9812c454c20ae45 \
     --hash=sha256:e4fc84337dce37ba34ef520bf2d4392b392999dbe47df992870dc23230f6b758
