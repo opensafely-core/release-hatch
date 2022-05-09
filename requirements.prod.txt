@@ -32,9 +32,9 @@ click==8.0.1 \
     --hash=sha256:8c04c11192119b1ef78ea049e0a6f0463e4c48ef00a30160c704337586f3ad7a \
     --hash=sha256:fba402a4a47334742d782209a7c79bc448911afe1149d07bdabdf480b3e2f4b6
     # via uvicorn
-fastapi==0.73.0 \
-    --hash=sha256:dcfee92a7f9a72b5d4b7ca364bd2b009f8fc10d95ed5769be20e94f39f7e5a15 \
-    --hash=sha256:f0a618aff5f6942862f2d3f20f39b1c037e33314d1b8207fd1c3a2cca76dfd8c
+fastapi==0.76.0 \
+    --hash=sha256:1e05c868651e3935bd9b290c61a3661a54e37471d3a0700bc5e4380f9ed935ae \
+    --hash=sha256:a5f99f6e827c7108a8efaf1d7f19d6cf2d735ad984f5e44d33ccec6ee88a7da1
     # via -r requirements.prod.in
 h11==0.12.0 \
     --hash=sha256:36a3cb8c0a032f56e2da7084577878a035d3b61d104230d4bd49c0c6b555a9c6 \
@@ -100,9 +100,9 @@ sniffio==1.2.0 \
     #   anyio
     #   httpcore
     #   httpx
-starlette==0.17.1 \
-    --hash=sha256:26a18cbda5e6b651c964c12c88b36d9898481cd428ed6e063f5f29c418f73050 \
-    --hash=sha256:57eab3cc975a28af62f6faec94d355a410634940f10b30d68d31cb5ec1b44ae8
+starlette==0.18.0 \
+    --hash=sha256:377d64737a0e03560cb8eaa57604afee143cea5a4996933242798a7820e64f53 \
+    --hash=sha256:b45c6e9a617ecb5caf7e6446bd8d767b0084d6217e8e1b08187ca5191e10f097
     # via fastapi
 typing-extensions==3.10.0.0 \
     --hash=sha256:0ac0f89795dd19de6b97debb0c6af1c70987fd80a2d62d1958f7e56fcc31b497 \
