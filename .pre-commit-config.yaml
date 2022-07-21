@@ -7,8 +7,8 @@ repos:
     hooks:
     - id: black
 
-  - repo: https://gitlab.com/pycqa/flake8
-    rev: 3.9.2
+  - repo: https://github.com/PyCQA/flake8
+    rev: 4.0.1
     hooks:
     - id: flake8
       additional_dependencies: [
@@ -16,8 +16,8 @@ repos:
         "flake8-implicit-str-concat"
       ]
 
-  - repo: https://github.com/pre-commit/mirrors-isort
-    rev: v5.8.0
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.10.1
     hooks:
     - id: isort
 
@@ -34,7 +34,7 @@ repos:
     - id: detect-private-key
 
   - repo: https://github.com/stratasan/hadolint-pre-commit
-    rev: cdefcb0
+    rev: cdefcb096e520a6daa9552b1d4636f5f1e1729cd
     hooks:
     - id: hadolint
       files: docker/Dockerfile
