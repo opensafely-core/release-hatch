@@ -34,7 +34,7 @@ repos:
     - id: detect-private-key
 
   - repo: https://github.com/stratasan/hadolint-pre-commit
-    rev: cdefcb0
+    rev: cdefcb096e520a6daa9552b1d4636f5f1e1729cd
     hooks:
     - id: hadolint
       files: docker/Dockerfile
