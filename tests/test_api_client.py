@@ -5,10 +5,10 @@ import httpx
 import pytest
 from fastapi import HTTPException
 
-from hatch import api_client, config, schema
+from hatch import api_client, config, models, schema
 
 
-def test_create_release(httpx_mock):
+def test_create_release_osrelease(httpx_mock):
     httpx_mock.add_response(
         url=config.JOB_SERVER_ENDPOINT + "/releases/workspace/workspace",
         method="POST",
@@ -36,6 +36,49 @@ def test_create_release(httpx_mock):
     assert request.headers["OS-User"] == "user"
     assert request.headers["Authorization"] == config.JOB_SERVER_TOKEN
     assert json.loads(request.read()) == {"files": {"file.txt": "sha"}}
+
+
+def test_create_release_spa(httpx_mock, workspace):
+    httpx_mock.add_response(
+        url=config.JOB_SERVER_ENDPOINT + "/releases/workspace/workspace",
+        method="POST",
+        status_code=201,
+        headers={
+            "Location": "https://url",
+            "Release-Id": "id",
+            "Connection": "close",
+            "Server": "server",
+            "Content-Length": "100",
+            "Content-Type": "application/json",
+        },
+    )
+
+    workspace.write("output/file1.txt", "test1")
+    filelist = models.get_index(workspace.path)
+    filelist.files[0].metadata = {"test": "test"}
+
+    response = api_client.create_release("workspace", filelist, "user")
+
+    assert response.headers["Location"] == "https://url"
+    assert response.headers["Release-Id"] == "id"
+    assert "Connection" not in response.headers
+    assert "Server" not in response.headers
+
+    request = httpx_mock.get_request()
+    assert request.headers["OS-User"] == "user"
+    assert request.headers["Authorization"] == config.JOB_SERVER_TOKEN
+    assert json.loads(request.read()) == {
+        "files": [
+            {
+                "name": "output/file1.txt",
+                "url": None,
+                "size": 5,
+                "sha256": workspace.get_sha("output/file1.txt"),
+                "date": workspace.get_date("output/file1.txt"),
+                "metadata": {"test": "test"},
+            },
+        ]
+    }
 
 
 def test_create_release_error(httpx_mock):

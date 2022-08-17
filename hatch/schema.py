@@ -24,30 +24,36 @@ class UrlFileName(str):
         return str(value).replace("\\", "/")
 
 
-class FileSchema(BaseModel):
+class FileMetadata(BaseModel):
     """Metadata for a workspace file."""
 
     name: UrlFileName
-    url: UrlFileName
-    size: int
-    sha256: str
-    user: str = None
-    date: datetime = None
+    url: UrlFileName = None  # Url to path on release-hatch instance
+    size: int  # size in bytes
+    sha256: str  # sha256 of file
+    date: datetime  # last modified in ISO date format
+    metadata: dict = None  # user supplied metadata about this file
 
 
-class IndexSchema(BaseModel):
+class FileList(BaseModel):
     """An index of files in a workspace.
 
     This must match the json format that the SPA's client API expects.
     """
 
-    files: List[FileSchema]
+    files: List[FileMetadata]
+
+
+# osrelease API, not used by SPA API
 
 
 class Release(BaseModel):
-    """Request a release.
+    """A request from osrelease for a set of files to released.
 
-    Files is a dict with {name: sha256} mapping.
+    Files is a dict with {name: sha256} mapping. We get the client to send the
+    hash that was viewed, in case the file has changed on disk since the user
+    viewed it.
+
     """
 
     files: Dict[UrlFileName, str]
@@ -56,9 +62,8 @@ class Release(BaseModel):
 class ReleaseFile(BaseModel):
     """File to upload to job-server.
 
-    This schema is unique to the release-hatch API, as the client just
-    indicates which file release-hatch should upload, rather than uploading the
-    bytes itself.
+    This schema is unique to the osrelease release-hatch API. The SPA uses
+    a background upload process, rather than an user API to trigger it.
     """
 
     name: UrlFileName

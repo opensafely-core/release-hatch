@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from hatch import api_client, config
-from hatch.schema import FileSchema, IndexSchema
+from hatch.schema import FileList, FileMetadata
 
 
 logger = logging.Logger(__name__)
@@ -65,29 +65,35 @@ def get_files(path):
     return list(sorted(filter(lambda p: not exclude(p), relative_paths)))
 
 
-def get_index(path, url_builder):
+def get_index(path, url_builder=None):
     files = []
     for name in get_files(path):
         abspath = path / name
         stat = abspath.stat()
-        date = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat()
+        mtime = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat()
         files.append(
-            FileSchema(
+            FileMetadata(
                 name=name,
-                url=url_builder(filename=str(name)),
+                url=url_builder(filename=str(name)) if url_builder else None,
                 size=stat.st_size,
                 sha256=get_sha(abspath),
-                date=date,
+                date=mtime,
             )
         )
-    return IndexSchema(files=files)
+    return FileList(files=files)
 
 
-def validate_release(workspace, workspace_dir, release):
+def validate_release_files(workspace, workspace_dir, filelist):
     """Validate the Release files are valid and match on sha."""
     errors = []
 
-    for name, sha in release.files.items():
+    # handle old/new release schemas
+    if isinstance(filelist, FileList):
+        hashes = {r.name: r.sha256 for r in filelist.files}
+    else:
+        hashes = filelist.files
+
+    for name, sha in hashes.items():
         p = workspace_dir / name
         if not p.exists():
             errors.append(f"File {name} not found in workspace {workspace}")
@@ -97,7 +103,7 @@ def validate_release(workspace, workspace_dir, release):
     return errors
 
 
-def create_release(workspace, workspace_dir, release, user):
+def create_release(workspace, workspace_dir, filelist, user):
     """Create a Release on job-server.
 
     This involves copying the files to a tmpdir, and creating the Release
@@ -110,10 +116,13 @@ def create_release(workspace, workspace_dir, release, user):
     tmp = Path(tmpdir.name)
     try:
         # copy files to a temp dir
-        copy_files(workspace_dir, release.files, tmp)
+        if isinstance(filelist, FileList):
+            copy_files(workspace_dir, [f.name for f in filelist.files], tmp)
+        else:
+            copy_files(workspace_dir, filelist.files, tmp)
 
         # tell job-server about the files
-        response = api_client.create_release(workspace, release, user)
+        response = api_client.create_release(workspace, filelist, user)
 
         # copy file into releases subdir of workspace dir
         workspace_release_dir = workspace_dir / "releases"
