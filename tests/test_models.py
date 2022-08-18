@@ -88,7 +88,8 @@ def test_get_index(workspace):
                 "date": workspace.get_date("output/file2.txt", iso=False),
                 "metadata": None,
             },
-        ]
+        ],
+        "metadata": None,
     }
 
 

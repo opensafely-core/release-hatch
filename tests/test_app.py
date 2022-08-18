@@ -165,7 +165,8 @@ def test_index_api(workspace):
                 "date": workspace.get_date("output/file2.txt"),
                 "metadata": None,
             },
-        ]
+        ],
+        "metadata": None,
     }
 
 
@@ -283,6 +284,7 @@ def test_workspace_release_success_spa(workspace, httpx_mock):
     workspace.write("output/file.txt", "test")
 
     filelist = models.get_index(workspace.path)
+    filelist.metadata = {"foo": "bar"}
 
     url = "/workspace/workspace/release"
     response = client.post(
@@ -348,7 +350,8 @@ def test_release_index_api(release):
                 "date": release.get_date("output/file2.txt"),
                 "metadata": None,
             },
-        ]
+        ],
+        "metadata": None,
     }
 
 
