@@ -4,7 +4,7 @@ from urllib.parse import urljoin
 
 from fastapi.testclient import TestClient
 
-from hatch import app, config, schema, signing
+from hatch import app, config, models, schema, signing
 from tests.factories import WorkspaceFactory
 from tests.test_signing import create_raw_token
 
@@ -155,7 +155,7 @@ def test_index_api(workspace):
                 "size": 5,
                 "sha256": workspace.get_sha("output/file1.txt"),
                 "date": workspace.get_date("output/file1.txt"),
-                "user": None,
+                "metadata": None,
             },
             {
                 "name": "output/file2.txt",
@@ -163,7 +163,7 @@ def test_index_api(workspace):
                 "size": 5,
                 "sha256": workspace.get_sha("output/file2.txt"),
                 "date": workspace.get_date("output/file2.txt"),
-                "user": None,
+                "metadata": None,
             },
         ]
     }
@@ -204,7 +204,7 @@ def test_workspace_release_workspace_not_exists():
     assert response.status_code == 403
 
 
-def test_workspace_release_workspace_bad_sha(workspace):
+def test_workspace_release_workspace_bad_sha_osrelease(workspace):
     workspace.write("output/file1.txt", "test1")
 
     release = schema.Release(files={"output/file1.txt": "badhash"})
@@ -221,7 +221,25 @@ def test_workspace_release_workspace_bad_sha(workspace):
     ]
 
 
-def test_workspace_release_success(workspace, httpx_mock):
+def test_workspace_release_workspace_bad_sha_spa(workspace):
+    workspace.write("output/file1.txt", "test1")
+
+    filelist = models.get_index(workspace.path)
+    filelist.files[0].sha256 = "badhash"
+
+    url = "/workspace/workspace/release"
+    response = client.post(
+        url,
+        data=filelist.json(),
+        headers=auth_headers(),
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == [
+        "File output/file1.txt does not match sha of 'badhash'"
+    ]
+
+
+def test_workspace_release_success_osrelease(workspace, httpx_mock):
     httpx_mock.add_response(
         url=config.JOB_SERVER_ENDPOINT + "/releases/workspace/workspace",
         method="POST",
@@ -243,6 +261,33 @@ def test_workspace_release_success(workspace, httpx_mock):
     response = client.post(
         url,
         json=release.dict(),
+        headers=auth_headers(),
+    )
+
+    assert response.status_code == 201
+    assert response.headers["Location"].endswith("/workspace/workspace/release/id")
+
+
+def test_workspace_release_success_spa(workspace, httpx_mock):
+    httpx_mock.add_response(
+        url=config.JOB_SERVER_ENDPOINT + "/releases/workspace/workspace",
+        method="POST",
+        status_code=201,
+        headers={
+            "Location": "https://url",
+            "Release-Id": "id",
+            "Content-Length": "100",
+            "Content-Type": "application/json",
+        },
+    )
+    workspace.write("output/file.txt", "test")
+
+    filelist = models.get_index(workspace.path)
+
+    url = "/workspace/workspace/release"
+    response = client.post(
+        url,
+        data=filelist.json(),
         headers=auth_headers(),
     )
 
@@ -293,7 +338,7 @@ def test_release_index_api(release):
                 "size": 5,
                 "sha256": release.get_sha("output/file1.txt"),
                 "date": release.get_date("output/file1.txt"),
-                "user": None,
+                "metadata": None,
             },
             {
                 "name": "output/file2.txt",
@@ -301,7 +346,7 @@ def test_release_index_api(release):
                 "size": 5,
                 "sha256": release.get_sha("output/file2.txt"),
                 "date": release.get_date("output/file2.txt"),
-                "user": None,
+                "metadata": None,
             },
         ]
     }

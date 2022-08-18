@@ -1,5 +1,6 @@
 import logging
 from functools import partial
+from typing import Union
 from urllib.parse import urlparse
 
 import aiofiles.os
@@ -104,7 +105,7 @@ async def aioexists(path):
         return True
 
 
-@app.get("/workspace/{workspace}/current", response_model=schema.IndexSchema)
+@app.get("/workspace/{workspace}/current", response_model=schema.FileList)
 def workspace_index(
     workspace: str, request: Request, token: AuthToken = Depends(validate)
 ):
@@ -140,17 +141,18 @@ async def workspace_file(
 def workspace_release(
     request: Request,
     workspace: str,
-    release: schema.Release,
+    # currently this API accept the osrelease json or the SPA version
+    filelist: Union[schema.Release, schema.FileList],
     token: AuthToken = Depends(validate),
 ):
     """Create a Release locally and in job-server."""
 
     workspace_dir = validate_workspace(workspace)
-    errors = models.validate_release(workspace, workspace_dir, release)
+    errors = models.validate_release_files(workspace, workspace_dir, filelist)
     if errors:
         raise HTTPException(400, errors)
 
-    response = models.create_release(workspace, workspace_dir, release, token.user)
+    response = models.create_release(workspace, workspace_dir, filelist, token.user)
     release_id = response.headers["Release-Id"]
 
     # rewrite location header to point to our upload endpoint, so that clients
@@ -210,7 +212,9 @@ def release_file_upload(
     release_file: schema.ReleaseFile,
     token: AuthToken = Depends(validate),
 ):
-    """Upload a file from a release to job-server."""
+    """Upload a file from a release to job-server.
+
+    This API was used by osrelease, and is deprecated"""
     name = release_file.name
     workspace_dir = validate_workspace(workspace)
     release_dir = validate_release(workspace_dir, release_id)

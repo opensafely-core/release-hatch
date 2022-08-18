@@ -1,5 +1,6 @@
 import hashlib
 import time
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -77,7 +78,7 @@ def test_get_index(workspace):
                 "size": 5,
                 "sha256": workspace.get_sha("output/file1.txt"),
                 "date": workspace.get_date("output/file1.txt", iso=False),
-                "user": None,
+                "metadata": None,
             },
             {
                 "name": "output/file2.txt",
@@ -85,13 +86,13 @@ def test_get_index(workspace):
                 "size": 5,
                 "sha256": workspace.get_sha("output/file2.txt"),
                 "date": workspace.get_date("output/file2.txt", iso=False),
-                "user": None,
+                "metadata": None,
             },
         ]
     }
 
 
-def test_validate_release_errors(workspace):
+def test_validate_release_files_errors_osrelease(workspace):
     workspace.write("output/file.txt", "test")
 
     release = schema.Release(
@@ -100,19 +101,47 @@ def test_validate_release_errors(workspace):
             "output/file.txt": "badsha",
         }
     )
-    assert models.validate_release("workspace", workspace.path, release) == [
+    assert models.validate_release_files("workspace", workspace.path, release) == [
         "File badfile not found in workspace workspace",
         "File output/file.txt does not match sha of 'badsha'",
     ]
 
 
-def test_validate_release_valid(workspace):
+def test_validate_release_files_errors_spa(workspace):
+    workspace.write("output/file.txt", "test")
+
+    filelist = models.get_index(workspace.path)
+    filelist.files[0].sha256 = "badsha"
+    # add missing file
+    filelist.files.append(
+        schema.FileMetadata(
+            name="badfile",
+            sha256="foo",
+            size=0,
+            date=datetime.utcnow(),
+        )
+    )
+
+    assert models.validate_release_files("workspace", workspace.path, filelist) == [
+        "File output/file.txt does not match sha of 'badsha'",
+        "File badfile not found in workspace workspace",
+    ]
+
+
+def test_validate_release_files_valid_osrelease(workspace):
     workspace.write("output/file.txt", "test")
 
     release = schema.Release(
         files={"output/file.txt": workspace.get_sha("output/file.txt")}
     )
-    assert models.validate_release("workspace", workspace.path, release) == []
+    assert models.validate_release_files("workspace", workspace.path, release) == []
+
+
+def test_validate_release_files_valid_spa(workspace):
+    workspace.write("output/file.txt", "test")
+
+    filelist = models.get_index(workspace.path)
+    assert models.validate_release_files("workspace", workspace.path, filelist) == []
 
 
 def test_create_release(workspace, httpx_mock):
