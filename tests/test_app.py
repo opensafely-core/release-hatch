@@ -133,6 +133,12 @@ def test_validate_url(caplog):
     )
 
 
+def test_root():
+    response = client.get("/")
+    assert response.status_code == 200
+    assert config.BACKEND in response.text
+
+
 def test_index_api_bad_workspace():
     url = "/workspace/bad/current"
     response = client.get(url, headers=auth_headers())
