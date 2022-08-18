@@ -42,6 +42,7 @@ class FileList(BaseModel):
     """
 
     files: List[FileMetadata]
+    metadata: dict = None  # user supplied metadata about these files
 
 
 # osrelease API, not used by SPA API

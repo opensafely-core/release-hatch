@@ -56,6 +56,7 @@ def test_create_release_spa(httpx_mock, workspace):
     workspace.write("output/file1.txt", "test1")
     filelist = models.get_index(workspace.path)
     filelist.files[0].metadata = {"test": "test"}
+    filelist.metadata = {"foo": "bar"}
 
     response = api_client.create_release("workspace", filelist, "user")
 
@@ -77,7 +78,8 @@ def test_create_release_spa(httpx_mock, workspace):
                 "date": workspace.get_date("output/file1.txt"),
                 "metadata": {"test": "test"},
             },
-        ]
+        ],
+        "metadata": {"foo": "bar"},
     }
 
 
