@@ -4,7 +4,7 @@ from typing import Union
 from urllib.parse import urlparse
 
 import aiofiles.os
-from fastapi import Depends, FastAPI, HTTPException, Security
+from fastapi import Depends, FastAPI, HTTPException, Response, Security
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.security.api_key import APIKeyHeader
@@ -103,6 +103,14 @@ async def aioexists(path):
         return False
     else:
         return True
+
+
+@app.get("/")
+def root():
+    return Response(
+        content=f"OpenSAFELY backend {config.BACKEND} release-hatch at {config.RELEASE_HOST}",
+        media_type="text/plain",
+    )
 
 
 @app.get("/workspace/{workspace}/current", response_model=schema.FileList)

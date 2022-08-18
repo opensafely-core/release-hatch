@@ -116,7 +116,7 @@ fix: devenv
 run:
     #!/usr/bin/env bash
     port=$(echo $RELEASE_HOST | awk -F: '{print $3}' | tr -d / )
-    $BIN/uvicorn hatch.app:app --reload --port $port
+    $BIN/uvicorn hatch.app:app --reload --port ${port:-8000}
 
 
 # Run the test client
