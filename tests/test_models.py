@@ -79,6 +79,7 @@ def test_get_index(workspace):
                 "sha256": workspace.get_sha("output/file1.txt"),
                 "date": workspace.get_date("output/file1.txt", iso=False),
                 "metadata": None,
+                "review": None,
             },
             {
                 "name": "output/file2.txt",
@@ -87,9 +88,11 @@ def test_get_index(workspace):
                 "sha256": workspace.get_sha("output/file2.txt"),
                 "date": workspace.get_date("output/file2.txt", iso=False),
                 "metadata": None,
+                "review": None,
             },
         ],
         "metadata": None,
+        "review": None,
     }
 
 

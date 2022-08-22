@@ -77,9 +77,11 @@ def test_create_release_spa(httpx_mock, workspace):
                 "sha256": workspace.get_sha("output/file1.txt"),
                 "date": workspace.get_date("output/file1.txt"),
                 "metadata": {"test": "test"},
+                "review": None,
             },
         ],
         "metadata": {"foo": "bar"},
+        "review": None,
     }
 
 

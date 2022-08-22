@@ -156,6 +156,7 @@ def test_index_api(workspace):
                 "sha256": workspace.get_sha("output/file1.txt"),
                 "date": workspace.get_date("output/file1.txt"),
                 "metadata": None,
+                "review": None,
             },
             {
                 "name": "output/file2.txt",
@@ -164,9 +165,11 @@ def test_index_api(workspace):
                 "sha256": workspace.get_sha("output/file2.txt"),
                 "date": workspace.get_date("output/file2.txt"),
                 "metadata": None,
+                "review": None,
             },
         ],
         "metadata": None,
+        "review": None,
     }
 
 
@@ -341,6 +344,7 @@ def test_release_index_api(release):
                 "sha256": release.get_sha("output/file1.txt"),
                 "date": release.get_date("output/file1.txt"),
                 "metadata": None,
+                "review": None,
             },
             {
                 "name": "output/file2.txt",
@@ -349,9 +353,11 @@ def test_release_index_api(release):
                 "sha256": release.get_sha("output/file2.txt"),
                 "date": release.get_date("output/file2.txt"),
                 "metadata": None,
+                "review": None,
             },
         ],
         "metadata": None,
+        "review": None,
     }
 
 

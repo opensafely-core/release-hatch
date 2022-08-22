@@ -6,6 +6,7 @@
 # Until then, do not make local changes, rather copy the latest version of this
 # file into your project.
 from datetime import datetime
+from enum import Enum
 from typing import Dict, List
 
 from pydantic import BaseModel
@@ -24,6 +25,16 @@ class UrlFileName(str):
         return str(value).replace("\\", "/")
 
 
+class ReviewStatus(Enum):
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+
+
+class FileReview(BaseModel):
+    status: ReviewStatus
+    comments: str
+
+
 class FileMetadata(BaseModel):
     """Metadata for a workspace file."""
 
@@ -33,6 +44,7 @@ class FileMetadata(BaseModel):
     sha256: str  # sha256 of file
     date: datetime  # last modified in ISO date format
     metadata: dict = None  # user supplied metadata about this file
+    review: FileReview = None  # any review metadata for this file
 
 
 class FileList(BaseModel):
@@ -42,7 +54,8 @@ class FileList(BaseModel):
     """
 
     files: List[FileMetadata]
-    metadata: dict = None  # user supplied metadata about these files
+    metadata: dict = None  # user supplied metadata about thse Release
+    review: dict = None  # review comments for the whole Release
 
 
 # osrelease API, not used by SPA API
