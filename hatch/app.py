@@ -11,7 +11,7 @@ from fastapi.security.api_key import APIKeyHeader
 from pydantic import ValidationError
 from starlette.requests import Request
 
-from hatch import config, models, schema
+from hatch import api_client, config, models, schema
 from hatch.signing import AuthToken
 
 
@@ -225,3 +225,25 @@ def release_file_upload(
     response = models.upload_file(release_id, name, path, token.user)
     # forward job-servers response back to client
     return response
+
+
+@app.post("/workspace/{workspace}/{release_id}/reviews")
+def release_review(
+    workspace: str,
+    release_id: str,
+    filelist: schema.FileList,
+    token: AuthToken = Depends(validate),
+):
+    workspace_dir = validate_workspace(workspace)
+    release_dir = validate_release(workspace_dir, release_id)
+
+    errors = models.validate_release_files(workspace, release_dir, filelist)
+    if errors:
+        raise HTTPException(400, errors)
+
+    errors = models.validate_review(filelist)
+    if errors:
+        raise HTTPException(400, errors)
+
+    # forward job-servers response back to client
+    return api_client.upload_review(release_id, filelist, token.user)

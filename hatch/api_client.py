@@ -82,6 +82,29 @@ def upload_file(release_id, name, path, user):
     return proxy_httpx_response(response)
 
 
+def upload_review(release_id, filelist, user):
+    """Upload review data to job server.
+
+    We return job server's response, but mapped from httpx to a fastapi
+    response object, so we can send it straight to the client.
+    """
+
+    response = client.post(
+        url=f"/releases/release/{release_id}/reviews",
+        content=filelist.json(),
+        headers={
+            "OS-User": user,
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        },
+    )
+    if response.status_code != 200:
+        logger.debug(f"request body: {filelist.json()}")
+        raise proxy_httpx_error(response)
+
+    return proxy_httpx_response(response)
+
+
 def _proxy_headers(orig_headers):
     """Remove hop-based headers.
 

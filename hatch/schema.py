@@ -32,7 +32,7 @@ class ReviewStatus(Enum):
 
 class FileReview(BaseModel):
     status: ReviewStatus
-    comments: str
+    comments: dict
 
 
 class FileMetadata(BaseModel):

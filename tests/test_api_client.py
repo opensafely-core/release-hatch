@@ -162,6 +162,24 @@ def test_upload_file_error(httpx_mock, tmp_path):
     assert response.detail == "error"
 
 
+def test_upload_review_error(httpx_mock, release):
+    httpx_mock.add_response(
+        url=config.JOB_SERVER_ENDPOINT + "/releases/release/release_id/reviews",
+        method="POST",
+        status_code=400,
+        json={"detail": "error"},
+    )
+
+    release.write("output/file1.txt", "test1")
+    filelist = models.get_index(release.path)
+
+    with pytest.raises(HTTPException) as exc_info:
+        api_client.upload_review("release_id", filelist, "user")
+
+    response = exc_info.value
+    assert response.detail == "error"
+
+
 def test_proxy_httpx_error_bad_json():
     response = httpx.Response(
         status_code=400,

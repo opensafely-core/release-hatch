@@ -105,10 +105,12 @@ def test_validate_release_files_errors_osrelease(workspace):
             "output/file.txt": "badsha",
         }
     )
-    assert models.validate_release_files("workspace", workspace.path, release) == [
-        "File badfile not found in workspace workspace",
-        "File output/file.txt does not match sha of 'badsha'",
-    ]
+    errors = models.validate_release_files("workspace", workspace.path, release)
+    assert "File badfile" in errors[0]
+    assert "workspace workspace" in errors[0]
+    assert str(workspace.path) in errors[0]
+    assert "File output/file.txt" in errors[1]
+    assert "badsha" in errors[1]
 
 
 def test_validate_release_files_errors_spa(workspace):
@@ -126,10 +128,12 @@ def test_validate_release_files_errors_spa(workspace):
         )
     )
 
-    assert models.validate_release_files("workspace", workspace.path, filelist) == [
-        "File output/file.txt does not match sha of 'badsha'",
-        "File badfile not found in workspace workspace",
-    ]
+    errors = models.validate_release_files("workspace", workspace.path, filelist)
+    assert "File output/file.txt" in errors[0]
+    assert "badsha" in errors[0]
+    assert "File badfile" in errors[1]
+    assert "workspace workspace" in errors[1]
+    assert str(workspace.path) in errors[1]
 
 
 def test_validate_release_files_valid_osrelease(workspace):
@@ -143,9 +147,34 @@ def test_validate_release_files_valid_osrelease(workspace):
 
 def test_validate_release_files_valid_spa(workspace):
     workspace.write("output/file.txt", "test")
-
     filelist = models.get_index(workspace.path)
     assert models.validate_release_files("workspace", workspace.path, filelist) == []
+
+
+def test_validate_review_valid(workspace):
+    workspace.write("output/file.txt", "test")
+    filelist = models.get_index(workspace.path)
+    filelist.files[0].review = schema.FileReview(
+        status=schema.ReviewStatus.APPROVED, comments={}
+    )
+    assert models.validate_review(filelist) == []
+
+
+def test_validate_review_rejected_no_review_data(workspace):
+    workspace.write("output/file.txt", "test")
+    filelist = models.get_index(workspace.path)
+    errors = models.validate_review(filelist)
+    assert "output/file.txt" in errors[0]
+
+
+def test_validate_review_rejected_no_comments(workspace):
+    workspace.write("output/file.txt", "test")
+    filelist = models.get_index(workspace.path)
+    filelist.files[0].review = schema.FileReview(
+        status=schema.ReviewStatus.REJECTED, comments={}
+    )
+    errors = models.validate_review(filelist)
+    assert "output/file.txt" in errors[0]
 
 
 def test_create_release(workspace, httpx_mock):
