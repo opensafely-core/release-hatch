@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from hatch import api_client, config
-from hatch.schema import FileList, FileMetadata
+from hatch.schema import FileList, FileMetadata, ReviewStatus
 
 
 logger = logging.Logger(__name__)
@@ -83,8 +83,11 @@ def get_index(path, url_builder=None):
     return FileList(files=files)
 
 
-def validate_release_files(workspace, workspace_dir, filelist):
-    """Validate the Release files are valid and match on sha."""
+def validate_release_files(workspace, directory, filelist):
+    """Validate that the included files exists and have the expected hash.
+
+    This can be used on the raw workspace files or on the release directory.
+    """
     errors = []
 
     # handle old/new release schemas
@@ -94,11 +97,26 @@ def validate_release_files(workspace, workspace_dir, filelist):
         hashes = filelist.files
 
     for name, sha in hashes.items():
-        p = workspace_dir / name
+        p = directory / name
         if not p.exists():
-            errors.append(f"File {name} not found in workspace {workspace}")
+            errors.append(
+                f"File {name} not found in {directory} for workspace {workspace}"
+            )
         elif sha != get_sha(p):
-            errors.append(f"File {name} does not match sha of '{sha}'")
+            errors.append(
+                f"File {name} in {directory} does not match expected sha of '{sha}'"
+            )
+
+    return errors
+
+
+def validate_review(filelist):
+    errors = []
+    for f in filelist.files:
+        if f.review is None:
+            errors.append(f"{f.name} is missing a review section")
+        elif f.review.status == ReviewStatus.REJECTED and not f.review.comments:
+            errors.append(f"REJECTED file {f.name} has no review comments")
 
     return errors
 

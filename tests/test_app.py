@@ -162,6 +162,7 @@ def test_index_api(workspace):
                 "sha256": workspace.get_sha("output/file1.txt"),
                 "date": workspace.get_date("output/file1.txt"),
                 "metadata": None,
+                "review": None,
             },
             {
                 "name": "output/file2.txt",
@@ -170,9 +171,11 @@ def test_index_api(workspace):
                 "sha256": workspace.get_sha("output/file2.txt"),
                 "date": workspace.get_date("output/file2.txt"),
                 "metadata": None,
+                "review": None,
             },
         ],
         "metadata": None,
+        "review": None,
     }
 
 
@@ -223,9 +226,9 @@ def test_workspace_release_workspace_bad_sha_osrelease(workspace):
         headers=auth_headers(),
     )
     assert response.status_code == 400
-    assert response.json()["detail"] == [
-        "File output/file1.txt does not match sha of 'badhash'"
-    ]
+    error = response.json()["detail"][0]
+    assert "output/file1.txt" in error
+    assert "badhash" in error
 
 
 def test_workspace_release_workspace_bad_sha_spa(workspace):
@@ -241,9 +244,9 @@ def test_workspace_release_workspace_bad_sha_spa(workspace):
         headers=auth_headers(),
     )
     assert response.status_code == 400
-    assert response.json()["detail"] == [
-        "File output/file1.txt does not match sha of 'badhash'"
-    ]
+    error = response.json()["detail"][0]
+    assert "output/file1.txt" in error
+    assert "badhash" in error
 
 
 def test_workspace_release_success_osrelease(workspace, httpx_mock):
@@ -347,6 +350,7 @@ def test_release_index_api(release):
                 "sha256": release.get_sha("output/file1.txt"),
                 "date": release.get_date("output/file1.txt"),
                 "metadata": None,
+                "review": None,
             },
             {
                 "name": "output/file2.txt",
@@ -355,9 +359,11 @@ def test_release_index_api(release):
                 "sha256": release.get_sha("output/file2.txt"),
                 "date": release.get_date("output/file2.txt"),
                 "metadata": None,
+                "review": None,
             },
         ],
         "metadata": None,
+        "review": None,
     }
 
 
@@ -439,3 +445,70 @@ def test_release_file_upload(release, httpx_mock):
     )
 
     assert response.status_code == 201
+
+
+def test_release_review_invalid_json(release):
+    release.write("output/file1.txt", "test1")
+    release.write("output/file2.txt", "test2")
+
+    filelist = models.get_index(release.path)
+
+    filelist.files[0].review = schema.FileReview(
+        status=schema.ReviewStatus.REJECTED,
+        comments={},
+    )
+
+    response = client.post(
+        url=f"/workspace/workspace/{release.id}/reviews",
+        data=filelist.json(),
+        headers=auth_headers(),
+    )
+
+    assert response.status_code == 400
+    errors = response.json()["detail"]
+    assert "output/file1.txt" in errors[0]
+    assert "output/file2.txt" in errors[1]
+
+
+def test_release_review_invalid_sha(release):
+    release.write("output/file1.txt", "test1")
+    filelist = models.get_index(release.path)
+
+    filelist.files[0].sha256 = "badsha"
+    response = client.post(
+        url=f"/workspace/workspace/{release.id}/reviews",
+        data=filelist.json(),
+        headers=auth_headers(),
+    )
+
+    assert response.status_code == 400
+    errors = response.json()["detail"]
+    assert "badsha" in errors[0]
+
+
+def test_release_review_valid(release, httpx_mock):
+    httpx_mock.add_response(
+        url=config.JOB_SERVER_ENDPOINT + f"/releases/release/{release.id}/reviews",
+        method="POST",
+        status_code=200,
+        headers={
+            "Content-Length": "100",
+            "Content-Type": "application/json",
+        },
+    )
+    release.write("output/file1.txt", "test1")
+
+    filelist = models.get_index(release.path)
+
+    filelist.files[0].review = schema.FileReview(
+        status=schema.ReviewStatus.APPROVED,
+        comments={"foo": "bar"},
+    )
+
+    response = client.post(
+        url=f"/workspace/workspace/{release.id}/reviews",
+        data=filelist.json(),
+        headers=auth_headers(),
+    )
+
+    assert response.status_code == 200

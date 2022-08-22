@@ -77,9 +77,11 @@ def test_create_release_spa(httpx_mock, workspace):
                 "sha256": workspace.get_sha("output/file1.txt"),
                 "date": workspace.get_date("output/file1.txt"),
                 "metadata": {"test": "test"},
+                "review": None,
             },
         ],
         "metadata": {"foo": "bar"},
+        "review": None,
     }
 
 
@@ -155,6 +157,24 @@ def test_upload_file_error(httpx_mock, tmp_path):
 
     with pytest.raises(HTTPException) as exc_info:
         api_client.upload_file("release_id", "output/file.txt", path, "user")
+
+    response = exc_info.value
+    assert response.detail == "error"
+
+
+def test_upload_review_error(httpx_mock, release):
+    httpx_mock.add_response(
+        url=config.JOB_SERVER_ENDPOINT + "/releases/release/release_id/reviews",
+        method="POST",
+        status_code=400,
+        json={"detail": "error"},
+    )
+
+    release.write("output/file1.txt", "test1")
+    filelist = models.get_index(release.path)
+
+    with pytest.raises(HTTPException) as exc_info:
+        api_client.upload_review("release_id", filelist, "user")
 
     response = exc_info.value
     assert response.detail == "error"
