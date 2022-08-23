@@ -11,7 +11,7 @@ from urllib.parse import urljoin
 
 import requests
 
-from hatch import app, config, signing
+from hatch import app, config, schema, signing
 
 
 def generate_token(workspace, user, duration):
@@ -158,6 +158,40 @@ def test_cmd(args):  # pragma: no cover
     sys.exit(exit_code)
 
 
+def request_cmd(args):  # pragma: no cover
+    token = get_token(args)
+    index = fetch_index(token, args.workspace)
+    files = {f["name"]: f for f in index["files"]}
+
+    filelist = schema.FileList(files=[])
+    if args.metadata:
+        filelist.metadata = {"comment": args.metadata}
+
+    for arg in args.files:
+        p, _, metadata = arg.partition(":")
+        filedata = files.get(p)
+        if filedata is None:
+            sys.exit(f"{p} does not exist")
+
+        obj = schema.FileMetadata(**filedata)
+        if metadata:
+            obj.metadata = {"comment": metadata}
+
+        filelist.files.append(obj)
+
+    path = app.app.url_path_for("workspace_release", workspace=args.workspace)
+    url = path.make_absolute_url(base_url=config.RELEASE_HOST)
+    response = requests.post(
+        url,
+        data=filelist.json(),
+        headers={"Authorization": token},
+    )
+
+    print(response)
+    print(response.headers)
+    print(response.text)
+
+
 def main(argv):
     parser = argparse.ArgumentParser()
 
@@ -224,6 +258,23 @@ def main(argv):
         help="run a functional test against a local release-hatch",
     )
     test_parser.set_defaults(function=test_cmd)
+
+    request_parser = subparsers.add_parser(
+        "request",
+        help="request some files be release",
+        parents=[shared],
+    )
+    request_parser.add_argument(
+        "files",
+        nargs="+",
+        help="files to release path[:metadata]",
+    )
+    request_parser.add_argument(
+        "--metadata",
+        "-m",
+        help="request metadata",
+    )
+    request_parser.set_defaults(function=request_cmd)
 
     args = parser.parse_args(argv)
     return args.function(args)
