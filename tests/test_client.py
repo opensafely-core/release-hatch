@@ -1,7 +1,7 @@
 import os
 import secrets
+import select
 import subprocess
-import time
 
 import pytest
 
@@ -36,8 +36,30 @@ def uvicorn_server(test_cli_env):
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     )
-    time.sleep(2)
-    assert not p.poll(), p.stdout.read().decode("utf-8")
+
+    # trickery to wait minium time until server is complete
+    lines = []
+    timeout = 2.0
+    while True:
+        # use select in order to not block forever
+        r, _, _ = select.select([p.stdout], [], [], timeout)
+        if r:
+            line = p.stdout.readline().decode("utf8")
+            lines.append(line)
+            if "startup complete" in line:
+                break
+        else:  # pragma: no cover
+            exitcode = p.poll()
+            stdout = "\n".join(lines)
+            if exitcode:
+                raise AssertionError(
+                    f"release-hatch exited unexpectedly with {exitcode}: {stdout}"
+                )
+            else:
+                # process is still running, but we've had no output for 2s
+                raise AssertionError(
+                    f"did not find expected output in release-hatch stdout: {stdout}"
+                )
     yield p
     p.terminate()
 
@@ -51,7 +73,7 @@ def test_client_test(uvicorn_server):
 
 def test_client_cli_index(test_cli_env, uvicorn_server, workspace):
     workspace.write("output/test.csv", "test")
-    main(["index", "-w", workspace.name])
+    main(["list", "-w", workspace.name])
 
 
 def test_client_cli_file(test_cli_env, uvicorn_server, workspace):

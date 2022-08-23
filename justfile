@@ -99,7 +99,6 @@ test *ARGS: devenv
     $BIN/python -m pytest --cov=. --cov-report html --cov-report term-missing:skip-covered {{ ARGS }}
 
 
-# runs the format (black), sort (isort) and lint (flake8) check but does not change any files
 check: devenv
     $BIN/black --check .
     $BIN/isort --check-only --diff .
@@ -115,13 +114,14 @@ fix: devenv
 # Run the dev project
 run:
     #!/usr/bin/env bash
+    set -eux
     port=$(echo $RELEASE_HOST | awk -F: '{print $3}' | tr -d / )
     $BIN/uvicorn hatch.app:app --reload --port ${port:-8000}
 
 
 # Run the test client
 client *ARGS:
-    @PTHONPATH=. $BIN/python ./hatch/client.py {{ ARGS }}
+    @PYTHONPATH=. $BIN/python ./hatch/client.py {{ ARGS }}
 
 
 # build docker image env=dev|prod
