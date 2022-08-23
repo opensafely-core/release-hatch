@@ -8,37 +8,7 @@ from fastapi import HTTPException
 from hatch import api_client, config, models, schema
 
 
-def test_create_release_osrelease(httpx_mock):
-    httpx_mock.add_response(
-        url=config.JOB_SERVER_ENDPOINT + "/releases/workspace/workspace",
-        method="POST",
-        status_code=201,
-        headers={
-            "Location": "https://url",
-            "Release-Id": "id",
-            "Connection": "close",
-            "Server": "server",
-            "Content-Length": "100",
-            "Content-Type": "application/json",
-        },
-    )
-
-    release = schema.Release(files={"file.txt": "sha"})
-
-    response = api_client.create_release("workspace", release, "user")
-
-    assert response.headers["Location"] == "https://url"
-    assert response.headers["Release-Id"] == "id"
-    assert "Connection" not in response.headers
-    assert "Server" not in response.headers
-
-    request = httpx_mock.get_request()
-    assert request.headers["OS-User"] == "user"
-    assert request.headers["Authorization"] == config.JOB_SERVER_TOKEN
-    assert json.loads(request.read()) == {"files": {"file.txt": "sha"}}
-
-
-def test_create_release_spa(httpx_mock, workspace):
+def test_create_release(httpx_mock, workspace):
     httpx_mock.add_response(
         url=config.JOB_SERVER_ENDPOINT + "/releases/workspace/workspace",
         method="POST",
@@ -100,10 +70,10 @@ def test_create_release_error(httpx_mock):
         },
     )
 
-    release = schema.Release(files={"file.txt": "sha"})
+    filelist = schema.FileList(files=[])
 
     with pytest.raises(HTTPException) as exc_info:
-        api_client.create_release("workspace", release, "user")
+        api_client.create_release("workspace", filelist, "user")
 
     response = exc_info.value
     assert response.headers["Some-header"] == "value"

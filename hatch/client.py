@@ -160,8 +160,7 @@ def test_cmd(args):  # pragma: no cover
 
 def request_cmd(args):  # pragma: no cover
     token = get_token(args)
-    index = fetch_index(token, args.workspace)
-    files = {f["name"]: f for f in index["files"]}
+    index = schema.FileList(**fetch_index(token, args.workspace))
 
     filelist = schema.FileList(files=[])
     if args.metadata:
@@ -169,7 +168,7 @@ def request_cmd(args):  # pragma: no cover
 
     for arg in args.files:
         p, _, metadata = arg.partition(":")
-        filedata = files.get(p)
+        filedata = index.get(p)
         if filedata is None:
             sys.exit(f"{p} does not exist")
 

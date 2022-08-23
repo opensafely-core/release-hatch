@@ -1,6 +1,5 @@
 import logging
 from functools import partial
-from typing import Union
 from urllib.parse import urlparse
 
 import aiofiles.os
@@ -153,7 +152,7 @@ def workspace_release(
     request: Request,
     workspace: str,
     # currently this API accept the osrelease json or the SPA version
-    filelist: Union[schema.Release, schema.FileList],
+    filelist: schema.FileList,
     token: AuthToken = Depends(validate),
 ):
     """Create a Release locally and in job-server."""

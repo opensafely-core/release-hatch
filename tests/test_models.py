@@ -96,24 +96,7 @@ def test_get_index(workspace):
     }
 
 
-def test_validate_release_files_errors_osrelease(workspace):
-    workspace.write("output/file.txt", "test")
-
-    release = schema.Release(
-        files={
-            "badfile": workspace.get_sha("output/file.txt"),
-            "output/file.txt": "badsha",
-        }
-    )
-    errors = models.validate_release_files("workspace", workspace.path, release)
-    assert "File badfile" in errors[0]
-    assert "workspace workspace" in errors[0]
-    assert str(workspace.path) in errors[0]
-    assert "File output/file.txt" in errors[1]
-    assert "badsha" in errors[1]
-
-
-def test_validate_release_files_errors_spa(workspace):
+def test_validate_release_files_errors(workspace):
     workspace.write("output/file.txt", "test")
 
     filelist = models.get_index(workspace.path)
@@ -136,16 +119,7 @@ def test_validate_release_files_errors_spa(workspace):
     assert str(workspace.path) in errors[1]
 
 
-def test_validate_release_files_valid_osrelease(workspace):
-    workspace.write("output/file.txt", "test")
-
-    release = schema.Release(
-        files={"output/file.txt": workspace.get_sha("output/file.txt")}
-    )
-    assert models.validate_release_files("workspace", workspace.path, release) == []
-
-
-def test_validate_release_files_valid_spa(workspace):
+def test_validate_release_files_valid(workspace):
     workspace.write("output/file.txt", "test")
     filelist = models.get_index(workspace.path)
     assert models.validate_release_files("workspace", workspace.path, filelist) == []
@@ -191,12 +165,9 @@ def test_create_release(workspace, httpx_mock):
     )
 
     workspace.write("output/file.txt", "test")
+    filelist = models.get_index(workspace.path)
 
-    release = schema.Release(
-        files={"output/file.txt": workspace.get_sha("output/file.txt")}
-    )
-
-    response = models.create_release("workspace", workspace.path, release, "user")
+    response = models.create_release("workspace", workspace.path, filelist, "user")
     assert response.headers["Location"] == "https://url"
     release_id = response.headers["Release-Id"]
     assert release_id == "id"
@@ -219,13 +190,10 @@ def test_create_release_error(workspace, httpx_mock):
     )
 
     workspace.write("output/file.txt", "test")
-
-    release = schema.Release(
-        files={"output/file.txt": hashlib.sha256(b"test").hexdigest()}
-    )
+    filelist = models.get_index(workspace.path)
 
     with pytest.raises(HTTPException) as exc_info:
-        models.create_release("workspace", workspace.path, release, "user")
+        models.create_release("workspace", workspace.path, filelist, "user")
 
     response = exc_info.value
     assert response.detail == "error"
