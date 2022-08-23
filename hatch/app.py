@@ -17,7 +17,10 @@ from hatch.signing import AuthToken
 
 config.setup_logging()
 logger = logging.getLogger(__name__)
-app = FastAPI()
+app = FastAPI(
+    title="release-hatch",
+    description="OpenSAFELY backend release management service",
+)
 
 
 # Allow SPA to access these files

@@ -127,8 +127,6 @@ def index_cmd(args):
 
 def file_cmd(args):
     """Download file from server."""
-    if not args.file:
-        sys.exit("File command need --file argument")
     token = get_token(args)
     index = fetch_index(token, args.workspace, args.release_id)
     files_dict = {f["name"]: f for f in index["files"]}
@@ -149,8 +147,7 @@ def file_cmd(args):
 
 def test_cmd(args):  # pragma: no cover
     """Run simple integration test aginst running server"""
-    if not args.workspace:
-        args.workspace = secrets.token_hex(8)
+    args.workspace = secrets.token_hex(8)
     token = get_token(args)
 
     exit_code = 0
@@ -161,23 +158,13 @@ def test_cmd(args):  # pragma: no cover
     sys.exit(exit_code)
 
 
-cmds = {
-    "token": token_cmd,
-    "index": index_cmd,
-    "file": file_cmd,
-    "test": test_cmd,
-}
-
-
 def main(argv):
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("command", help="command to run", choices=cmds)
-    parser.add_argument(
-        "--workspace",
-        "-w",
-        help="workspace name",
-    )
+    def show_help(*args, **kwargs):  # pragma: no cover
+        parser.print_help()
+        parser.exit()
+
     parser.add_argument(
         "--user",
         "-u",
@@ -190,20 +177,56 @@ def main(argv):
         default=60,
         help="how many minutes is the token valid for",
     )
-    parser.add_argument(
+
+    # a holder for shared arguments for each subcommand
+    shared = argparse.ArgumentParser(add_help=False)
+    shared.add_argument("--workspace", "-w", help="workspace name")
+    shared.add_argument(
         "--release",
         "-r",
         dest="release_id",
-        help="release id to index or download file fome",
+        help="release to use",
     )
-    parser.add_argument(
+
+    subparsers = parser.add_subparsers(
+        title="available commands", dest="command", description="", metavar="COMMAND"
+    )
+
+    token_parser = subparsers.add_parser(
+        "token",
+        help="generate a token to use manually",
+        parents=[shared],
+    )
+    token_parser.set_defaults(function=token_cmd)
+
+    index_parser = subparsers.add_parser(
+        "list",
+        help="list the files for a workspace or release",
+        parents=[shared],
+    )
+    index_parser.set_defaults(function=index_cmd)
+
+    file_parser = subparsers.add_parser(
+        "file",
+        help="download a file from workspace or release",
+        parents=[shared],
+    )
+    file_parser.set_defaults(function=file_cmd)
+    file_parser.add_argument(
         "--file",
         "-f",
-        help="file to download (only for 'file' command)",
+        required=True,
+        help="file name to download",
     )
-    args = parser.parse_args(argv)
 
-    return cmds[args.command](args)
+    test_parser = subparsers.add_parser(
+        "test",
+        help="run a functional test against a local release-hatch",
+    )
+    test_parser.set_defaults(function=test_cmd)
+
+    args = parser.parse_args(argv)
+    return args.function(args)
 
 
 if __name__ == "__main__":  # pragma: no cover
