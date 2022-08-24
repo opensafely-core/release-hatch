@@ -7,7 +7,7 @@
 # file into your project.
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List
+from typing import List
 
 from pydantic import BaseModel
 
@@ -57,20 +57,12 @@ class FileList(BaseModel):
     metadata: dict = None  # user supplied metadata about thse Release
     review: dict = None  # review comments for the whole Release
 
-
-# osrelease API, not used by SPA API
-
-
-class Release(BaseModel):
-    """A request from osrelease for a set of files to released.
-
-    Files is a dict with {name: sha256} mapping. We get the client to send the
-    hash that was viewed, in case the file has changed on disk since the user
-    viewed it.
-
-    """
-
-    files: Dict[UrlFileName, str]
+    def get(self, name):  # pragma: no cover
+        name = str(name)
+        for f in self.files:
+            if f.name == name:
+                return f
+        return None
 
 
 class ReleaseFile(BaseModel):

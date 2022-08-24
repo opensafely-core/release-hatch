@@ -89,22 +89,15 @@ def validate_release_files(workspace, directory, filelist):
     This can be used on the raw workspace files or on the release directory.
     """
     errors = []
-
-    # handle old/new release schemas
-    if isinstance(filelist, FileList):
-        hashes = {r.name: r.sha256 for r in filelist.files}
-    else:
-        hashes = filelist.files
-
-    for name, sha in hashes.items():
-        p = directory / name
+    for f in filelist.files:
+        p = directory / f.name
         if not p.exists():
             errors.append(
-                f"File {name} not found in {directory} for workspace {workspace}"
+                f"File {f.name} not found in {directory} for workspace {workspace}"
             )
-        elif sha != get_sha(p):
+        elif f.sha256 != get_sha(p):
             errors.append(
-                f"File {name} in {directory} does not match expected sha of '{sha}'"
+                f"File {f.name} in {directory} does not match expected sha of '{f.sha256}'"
             )
 
     return errors
@@ -134,10 +127,7 @@ def create_release(workspace, workspace_dir, filelist, user):
     tmp = Path(tmpdir.name)
     try:
         # copy files to a temp dir
-        if isinstance(filelist, FileList):
-            copy_files(workspace_dir, [f.name for f in filelist.files], tmp)
-        else:
-            copy_files(workspace_dir, filelist.files, tmp)
+        copy_files(workspace_dir, [f.name for f in filelist.files], tmp)
 
         # tell job-server about the files
         response = api_client.create_release(workspace, filelist, user)

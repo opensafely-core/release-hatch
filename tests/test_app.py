@@ -208,30 +208,13 @@ def test_workspace_release_workspace_not_exists():
     url = "/workspace/notexists/release"
     response = client.post(
         url,
-        json=schema.Release(files={}).dict(),
+        json=schema.FileList(files=[]).dict(),
         headers=auth_headers(),
     )
     assert response.status_code == 403
 
 
-def test_workspace_release_workspace_bad_sha_osrelease(workspace):
-    workspace.write("output/file1.txt", "test1")
-
-    release = schema.Release(files={"output/file1.txt": "badhash"})
-
-    url = "/workspace/workspace/release"
-    response = client.post(
-        url,
-        data=release.json(),
-        headers=auth_headers(),
-    )
-    assert response.status_code == 400
-    error = response.json()["detail"][0]
-    assert "output/file1.txt" in error
-    assert "badhash" in error
-
-
-def test_workspace_release_workspace_bad_sha_spa(workspace):
+def test_workspace_release_workspace_bad_sha(workspace):
     workspace.write("output/file1.txt", "test1")
 
     filelist = models.get_index(workspace.path)
@@ -249,36 +232,7 @@ def test_workspace_release_workspace_bad_sha_spa(workspace):
     assert "badhash" in error
 
 
-def test_workspace_release_success_osrelease(workspace, httpx_mock):
-    httpx_mock.add_response(
-        url=config.JOB_SERVER_ENDPOINT + "/releases/workspace/workspace",
-        method="POST",
-        status_code=201,
-        headers={
-            "Location": "https://url",
-            "Release-Id": "id",
-            "Content-Length": "100",
-            "Content-Type": "application/json",
-        },
-    )
-    workspace.write("output/file.txt", "test")
-
-    release = schema.Release(
-        files={"output/file.txt": workspace.get_sha("output/file.txt")}
-    )
-
-    url = "/workspace/workspace/release"
-    response = client.post(
-        url,
-        json=release.dict(),
-        headers=auth_headers(),
-    )
-
-    assert response.status_code == 201
-    assert response.headers["Location"].endswith("/workspace/workspace/release/id")
-
-
-def test_workspace_release_success_spa(workspace, httpx_mock):
+def test_workspace_release_success(workspace, httpx_mock):
     httpx_mock.add_response(
         url=config.JOB_SERVER_ENDPOINT + "/releases/workspace/workspace",
         method="POST",
