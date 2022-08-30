@@ -257,7 +257,9 @@ def test_workspace_release_success(workspace, httpx_mock):
     )
 
     assert response.status_code == 201
-    assert response.headers["Location"].endswith("/workspace/workspace/release/id")
+    assert response.headers["Release-API-Location"].endswith(
+        "/workspace/workspace/release/id"
+    )
 
 
 def test_release_index_api_bad_workspace():
