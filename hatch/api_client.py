@@ -115,7 +115,7 @@ def _proxy_headers(orig_headers):
     designed to not need nginx.
     """
     headers = orig_headers.copy()
-    for header in ["Connection", "Server"]:
+    for header in ["Connection", "Server", "Content-Length"]:
         headers.pop(header, None)
     # add in proxy info
     headers["Via"] = config.RELEASE_HOST
@@ -135,7 +135,7 @@ def proxy_httpx_error(response):
     """Take an upstream httpx response and convert to a proxied FastAPI HTTPException."""
     # either it is json from job-server, or its html from nginx
     try:
-        detail = response.json()["detail"]
+        detail = response.json()
     except Exception:
         detail = response.content.decode("utf8")
 
@@ -144,7 +144,7 @@ def proxy_httpx_error(response):
     if len(detail) <= 2048:
         logger.error(f"body:\n{detail}")
     else:  # pragma: no cover
-        logger.error("body (truncated):\n{body[:2048]}")
+        logger.error(f"body (truncated):\n{detail[:2048]}")
 
     return HTTPException(
         status_code=response.status_code,

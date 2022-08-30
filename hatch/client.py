@@ -172,11 +172,10 @@ def request_cmd(args):  # pragma: no cover
         if filedata is None:
             sys.exit(f"{p} does not exist")
 
-        obj = schema.FileMetadata(**filedata)
         if metadata:
-            obj.metadata = {"comment": metadata}
+            filedata.metadata = {"comment": metadata}
 
-        filelist.files.append(obj)
+        filelist.files.append(filedata)
 
     path = app.app.url_path_for("workspace_release", workspace=args.workspace)
     url = path.make_absolute_url(base_url=config.RELEASE_HOST)
