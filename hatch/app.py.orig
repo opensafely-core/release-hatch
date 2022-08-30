@@ -36,12 +36,7 @@ app.add_middleware(
     # allow browser JS to set Authorization header
     allow_headers=["Authorization"],
     # ensure JS can read our custom headers
-    expose_headers=[
-        "Response-Id",
-        "File-Id",
-        "Release-Location",
-        "Release-API-Location",
-    ],
+    expose_headers=["Response-Id", "File-Id"],
 )
 
 

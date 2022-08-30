@@ -196,4 +196,4 @@ def test_create_release_error(workspace, httpx_mock):
         models.create_release("workspace", workspace.path, filelist, "user")
 
     response = exc_info.value
-    assert response.detail == "error"
+    assert response.detail == {"detail": "error"}

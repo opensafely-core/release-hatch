@@ -2,7 +2,7 @@ set dotenv-load := true
 
 # just has no idiom for setting a default value for an environment variable
 # so we shell out, as we need VIRTUAL_ENV in the justfile environment
-export VIRTUAL_ENV  := `echo ${VIRTUAL_ENV:-.venv}`
+export VIRTUAL_ENV := `echo ${VIRTUAL_ENV:-.venv}`
 
 # TODO: make it /scripts on windows?
 export BIN := VIRTUAL_ENV + "/bin"

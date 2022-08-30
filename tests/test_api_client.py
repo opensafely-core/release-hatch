@@ -77,7 +77,7 @@ def test_create_release_error(httpx_mock):
 
     response = exc_info.value
     assert response.headers["Some-header"] == "value"
-    assert response.detail == "error"
+    assert response.detail == {"detail": "error"}
     assert "Connection" not in response.headers
     assert "Server" not in response.headers
 
@@ -129,7 +129,7 @@ def test_upload_file_error(httpx_mock, tmp_path):
         api_client.upload_file("release_id", "output/file.txt", path, "user")
 
     response = exc_info.value
-    assert response.detail == "error"
+    assert response.detail == {"detail": "error"}
 
 
 def test_upload_review_error(httpx_mock, release):
@@ -147,17 +147,17 @@ def test_upload_review_error(httpx_mock, release):
         api_client.upload_review("release_id", filelist, "user")
 
     response = exc_info.value
-    assert response.detail == "error"
+    assert response.detail == {"detail": "error"}
 
 
 def test_proxy_httpx_error_bad_json():
     response = httpx.Response(
         status_code=400,
-        json={},
+        content="]{",
     )
     exc = api_client.proxy_httpx_error(response)
     assert exc.status_code == 400
-    assert exc.detail == "{}"
+    assert exc.detail == "]{"
 
 
 def test_client_logs_message(httpx_mock, caplog):
