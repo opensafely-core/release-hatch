@@ -1,5 +1,6 @@
 import logging
 from functools import partial
+from typing import Optional
 from urllib.parse import urlparse
 
 import aiofiles.os
@@ -8,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.security.api_key import APIKeyHeader
 from pydantic import ValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.requests import Request
 
 from hatch import api_client, config, models, schema
@@ -38,7 +40,19 @@ app.add_middleware(
 )
 
 
-api_key_header = APIKeyHeader(name="Authorization")
+class LoggingAPIKeyHeader(APIKeyHeader):
+    """Logs when an APIKey header is missing"""
+
+    async def __call__(self, request: Request) -> Optional[str]:
+        try:
+            return await super().__call__(request)
+        except StarletteHTTPException as exc:  # pragma: no cover
+            if exc.status_code == 403:
+                logger.info(f"Missing required api key header: {self.model.name}")
+            raise
+
+
+api_key_header = LoggingAPIKeyHeader(name="Authorization")
 allowed_hosts = (urlparse(config.RELEASE_HOST).hostname, "localhost")
 
 
@@ -46,13 +60,15 @@ def validate(request: Request, auth_token: str = Security(api_key_header)):
     try:
         token = AuthToken.verify(auth_token, config.JOB_SERVER_TOKEN, "hatch")
     except AuthToken.Expired as exc:
-        logger.info(f"auth expired: {exc.__class__}: {exc} ({auth_token})")
+        logger.info(f"auth expired: {exc.__class__.__name__}: {exc} ({auth_token})")
         raise HTTPException(401, "Unauthorized")
     except AuthToken.BadSignature as exc:
-        logger.info(f"auth signing failed: {exc.__class__}: {exc} ({auth_token})")
+        logger.info(
+            f"auth signing failed: {exc.__class__.__name__}: {exc} ({auth_token})"
+        )
         raise HTTPException(403, "Forbbiden")
     except ValidationError as exc:
-        logger.info(f"auth failed: {exc.__class__}: {exc} ({auth_token})")
+        logger.info(f"auth failed: {exc.__class__.__name__}: {exc} ({auth_token})")
         raise HTTPException(403, "Forbidden")
 
     validate_url(token, request)
