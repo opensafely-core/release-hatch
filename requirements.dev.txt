@@ -245,9 +245,9 @@ pytest==6.2.5 \
     #   -r requirements.dev.in
     #   pytest-cov
     #   pytest-httpx
-pytest-cov==3.0.0 \
-    --hash=sha256:578d5d15ac4a25e5f961c938b85a05b09fdaae9deef3bb6de9a6e766622ca7a6 \
-    --hash=sha256:e7f0f5b1617d2210a2cabc266dfe2f4c75a8d32fb89eafb7ad9d06f6d076d470
+pytest-cov==4.1.0 \
+    --hash=sha256:3904b13dfbfec47f003b8e77fd5b589cd11904a21ddf1ab38a64f204d6a10ef6 \
+    --hash=sha256:6ba70b9e97e69fcc3fb45bfeab2d0a138fb65c4d0d6a41ef33983ad114be8c3a
     # via -r requirements.dev.in
 pytest-httpx==0.12.1 \
     --hash=sha256:703433f65951bde6e08d4b1d8956f8f9dec4b3046c2805414e40adb87908ee7f \
