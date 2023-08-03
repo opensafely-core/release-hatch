@@ -24,6 +24,8 @@ clean:
 # ensure valid virtualenv
 _virtualenv:
     #!/usr/bin/env bash
+    set -euo pipefail
+
     # allow users to specify python version in .env
     PYTHON_VERSION=${PYTHON_VERSION:-python3.9}
 
@@ -36,6 +38,8 @@ _virtualenv:
 
 _compile src dst *args: _virtualenv
     #!/usr/bin/env bash
+    set -euo pipefail
+
     # exit if src file is older than dst file (-nt = 'newer than', but we negate with || to avoid error exit code)
     test "${FORCE:-}" = "true" -o {{ src }} -nt {{ dst }} || exit 0
     $BIN/pip-compile --allow-unsafe --generate-hashes --output-file={{ dst }} {{ src }} {{ args }}
@@ -54,6 +58,8 @@ requirements-dev *args: requirements-prod
 # ensure prod requirements installed and up to date
 prodenv: requirements-prod
     #!/usr/bin/env bash
+    set -euo pipefail
+
     # exit if .txt file has not changed since we installed them (-nt == "newer than', but we negate with || to avoid error exit code)
     test requirements.prod.txt -nt $VIRTUAL_ENV/.prod || exit 0
 
@@ -71,6 +77,8 @@ _env:
 # ensure dev requirements installed and up to date
 devenv: _env prodenv requirements-dev && _install-precommit
     #!/usr/bin/env bash
+    set -euo pipefail
+
     # exit if .txt file has not changed since we installed them (-nt == "newer than', but we negate with || to avoid error exit code)
     test requirements.dev.txt -nt $VIRTUAL_ENV/.dev || exit 0
 
@@ -81,6 +89,8 @@ devenv: _env prodenv requirements-dev && _install-precommit
 # ensure precommit is installed
 _install-precommit:
     #!/usr/bin/env bash
+    set -euo pipefail
+
     BASE_DIR=$(git rev-parse --show-toplevel)
     test -f $BASE_DIR/.git/hooks/pre-commit || $BIN/pre-commit install
 
@@ -88,6 +98,8 @@ _install-precommit:
 # upgrade dev or prod dependencies (specify package to upgrade single package, all by default)
 upgrade env package="": _virtualenv
     #!/usr/bin/env bash
+    set -euo pipefail
+
     opts="--upgrade"
     test -z "{{ package }}" || opts="--upgrade-package {{ package }}"
     FORCE=true {{ just_executable() }} requirements-{{ env }} $opts
@@ -114,7 +126,8 @@ fix: devenv
 # Run the dev project
 run:
     #!/usr/bin/env bash
-    set -eux
+    set -euxo pipefail
+
     port=$(echo $RELEASE_HOST | awk -F: '{print $3}' | tr -d / )
     $BIN/uvicorn hatch.app:app --reload --port ${port:-8000}
 
