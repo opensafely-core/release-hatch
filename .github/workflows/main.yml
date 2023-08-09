@@ -76,8 +76,8 @@ jobs:
   lint-dockerfile:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: hadolint/hadolint-action@v1.5.0
+      - uses: actions/checkout@v3
+      - uses: hadolint/hadolint-action@54c9adbab1582c2ef04b2016b760714a4bfde3cf  # v3.1.0
         with:
           failure-threshold: error
           dockerfile: docker/Dockerfile
