@@ -23,7 +23,6 @@ jobs:
         run: just check
 
   test:
-    needs: [check]
     runs-on: ubuntu-latest
 
     steps:
@@ -38,7 +37,6 @@ jobs:
           just test
 
   docker:
-    needs: [test]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -81,3 +79,20 @@ jobs:
         with:
           failure-threshold: error
           dockerfile: docker/Dockerfile
+
+  required-checks:
+    if: always()
+
+    needs:
+    - check
+    - test
+    - docker
+    - lint-dockerfile
+
+    runs-on: Ubuntu-latest
+
+    steps:
+    - name: Decide whether the needed jobs succeeded or failed
+      uses: re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe  # v1.2.2
+      with:
+        jobs: ${{ toJSON(needs) }}
