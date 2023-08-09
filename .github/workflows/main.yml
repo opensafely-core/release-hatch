@@ -13,11 +13,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: "actions/setup-python@v2"
+      - uses: actions/checkout@v3
+      - uses: "opensafely-core/setup-action@v1"
         with:
           python-version: "3.9"
-      - uses: extractions/setup-just@aa5d15c144db4585980a44ebfdd2cf337c4f14cb  # v1.4.0
+          cache-dependency-path: "requirements.*.txt"
+          install-just: true
       - name: Check formatting, linting and import sorting
         run: just check
 
@@ -26,11 +27,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: "actions/setup-python@v2"
+      - uses: actions/checkout@v3
+      - uses: "opensafely-core/setup-action@v1"
         with:
           python-version: "3.9"
-      - uses: extractions/setup-just@aa5d15c144db4585980a44ebfdd2cf337c4f14cb  # v1.4.0
+          cache-dependency-path: "requirements.*.txt"
+          install-just: true
       - name: Run tests
         run: |
           just test
@@ -43,11 +45,12 @@ jobs:
       packages: write
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: "actions/setup-python@v2"
+      - uses: actions/checkout@v3
+      - uses: "opensafely-core/setup-action@v1"
         with:
           python-version: "3.9"
-      - uses: extractions/setup-just@aa5d15c144db4585980a44ebfdd2cf337c4f14cb  # v1.4.0
+          cache-dependency-path: "requirements.*.txt"
+          install-just: true
       - name: Build docker image and run tests in it
         run: |
           # build docker and run test
