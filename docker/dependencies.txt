@@ -1,1 +1,6 @@
 # list ubuntu packages needed in production, one per line
+ca-certificates
+python3.9
+python3.9-distutils
+python3.9-venv
+tzdata
