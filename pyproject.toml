@@ -1,16 +1,23 @@
 [tool.coverage.run]
 branch = true
+dynamic_context = "test_function"
 omit = [
   ".direnv/*",
   ".venv/*",
   "dev-token.py",
 ]
+source = [
+  "app",
+  "tests",
+]
 
 [tool.coverage.report]
 fail_under = 100
+show_missing = true
 skip_covered = true
 
 [tool.coverage.html]
+show_contexts = true
 
 [tool.pytest.ini_options]
 
