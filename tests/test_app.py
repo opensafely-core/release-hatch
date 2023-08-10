@@ -115,7 +115,7 @@ def test_validate_url(caplog):
     # the token hostname did not match
     assert r3.status_code == 403
     assert (
-        caplog.records[-1].msg
+        caplog.records[-2].msg
         == "Host invalid.com from 'https://invalid.com/workspace/workspace' did not match any of ('testserver', 'localhost')"
     )
 
@@ -128,7 +128,7 @@ def test_validate_url(caplog):
     # the url and token url did not match
     assert r5.status_code == 403
     assert (
-        caplog.records[-1].msg
+        caplog.records[-2].msg
         == "Request path /workspace/invalid/current/file.txt does not match token path /workspace/workspace"
     )
 
