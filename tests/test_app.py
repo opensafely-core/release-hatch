@@ -16,7 +16,7 @@ def auth_token(path, user="user", expiry=None, base_url=None):
     if expiry is None:  # pragma: no cover
         expiry = datetime.now(timezone.utc) + timedelta(hours=1)
     if base_url is None:
-        base_url = client.base_url
+        base_url = str(client.base_url)
 
     return signing.AuthToken(
         url=urljoin(base_url, path),
@@ -49,7 +49,7 @@ def test_validate_invalid_token_secret():
     url = "/workspace/workspace/current"
     token = create_raw_token(
         dict(
-            url=urljoin(client.base_url, "/workspace/workspace"),
+            url=urljoin(str(client.base_url), "/workspace/workspace"),
             user="user",
             expiry=datetime.now(timezone.utc) + timedelta(hours=1),
         ),
@@ -87,7 +87,7 @@ def test_validate_expired_token():
     # valid except for expiry
     token = create_raw_token(
         dict(
-            url=urljoin(client.base_url, "/workspace/workspace"),
+            url=urljoin(str(client.base_url), "/workspace/workspace"),
             user="user",
             expiry=datetime.now(timezone.utc) - timedelta(hours=1),
         ),
@@ -115,7 +115,7 @@ def test_validate_url(caplog):
     # the token hostname did not match
     assert r3.status_code == 403
     assert (
-        caplog.records[-1].msg
+        caplog.records[-2].msg
         == "Host invalid.com from 'https://invalid.com/workspace/workspace' did not match any of ('testserver', 'localhost')"
     )
 
@@ -128,7 +128,7 @@ def test_validate_url(caplog):
     # the url and token url did not match
     assert r5.status_code == 403
     assert (
-        caplog.records[-1].msg
+        caplog.records[-2].msg
         == "Request path /workspace/invalid/current/file.txt does not match token path /workspace/workspace"
     )
 
@@ -223,7 +223,7 @@ def test_workspace_release_workspace_bad_sha(workspace):
     url = "/workspace/workspace/release"
     response = client.post(
         url,
-        data=filelist.json(),
+        content=filelist.json(),
         headers=auth_headers(),
     )
     assert response.status_code == 400
@@ -252,7 +252,7 @@ def test_workspace_release_success(workspace, httpx_mock):
     url = "/workspace/workspace/release"
     response = client.post(
         url,
-        data=filelist.json(),
+        content=filelist.json(),
         headers=auth_headers(),
     )
 
@@ -358,7 +358,7 @@ def test_release_file_upload_bad_workspace(release):
     release.write("output/file.txt", "test")
     url = f"/workspace/other/release/{release.id}"
     name = schema.ReleaseFile(name="output/file.txt")
-    response = client.post(url, data=name.json(), headers=auth_headers("other"))
+    response = client.post(url, content=name.json(), headers=auth_headers("other"))
     assert response.status_code == 404
 
 
@@ -366,7 +366,7 @@ def test_release_file_upload_bad_release(release):
     release.write("output/file.txt", "test")
     url = "/workspace/workspace/release/badid"
     name = schema.ReleaseFile(name="output/file.txt")
-    response = client.post(url, data=name.json(), headers=auth_headers())
+    response = client.post(url, content=name.json(), headers=auth_headers())
     assert response.status_code == 404
 
 
@@ -374,7 +374,7 @@ def test_release_file_upload_bad_file(release):
     release.write("output/file.txt", "test")
     url = f"/workspace/workspace/release/{release.id}"
     name = schema.ReleaseFile(name="output/bad.txt")
-    response = client.post(url, data=name.json(), headers=auth_headers())
+    response = client.post(url, content=name.json(), headers=auth_headers())
     assert response.status_code == 404
 
 
@@ -396,7 +396,7 @@ def test_release_file_upload(release, httpx_mock):
     name = schema.ReleaseFile(name="output/file.txt")
     response = client.post(
         url,
-        data=name.json(),
+        content=name.json(),
         headers=auth_headers(),
     )
 
@@ -416,7 +416,7 @@ def test_release_review_invalid_json(release):
 
     response = client.post(
         url=f"/workspace/workspace/{release.id}/reviews",
-        data=filelist.json(),
+        content=filelist.json(),
         headers=auth_headers(),
     )
 
@@ -433,7 +433,7 @@ def test_release_review_invalid_sha(release):
     filelist.files[0].sha256 = "badsha"
     response = client.post(
         url=f"/workspace/workspace/{release.id}/reviews",
-        data=filelist.json(),
+        content=filelist.json(),
         headers=auth_headers(),
     )
 
@@ -463,7 +463,7 @@ def test_release_review_valid(release, httpx_mock):
 
     response = client.post(
         url=f"/workspace/workspace/{release.id}/reviews",
-        data=filelist.json(),
+        content=filelist.json(),
         headers=auth_headers(),
     )
 

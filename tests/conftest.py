@@ -29,3 +29,8 @@ def workspace():
 @pytest.fixture
 def release(workspace):
     return factories.ReleaseFactory(name="release_id", workspace=workspace)
+
+
+@pytest.fixture
+def non_mocked_hosts() -> list:
+    return ["testserver"]
