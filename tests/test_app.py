@@ -16,7 +16,7 @@ def auth_token(path, user="user", expiry=None, base_url=None):
     if expiry is None:  # pragma: no cover
         expiry = datetime.now(timezone.utc) + timedelta(hours=1)
     if base_url is None:
-        base_url = client.base_url
+        base_url = str(client.base_url)
 
     return signing.AuthToken(
         url=urljoin(base_url, path),
@@ -49,7 +49,7 @@ def test_validate_invalid_token_secret():
     url = "/workspace/workspace/current"
     token = create_raw_token(
         dict(
-            url=urljoin(client.base_url, "/workspace/workspace"),
+            url=urljoin(str(client.base_url), "/workspace/workspace"),
             user="user",
             expiry=datetime.now(timezone.utc) + timedelta(hours=1),
         ),
@@ -87,7 +87,7 @@ def test_validate_expired_token():
     # valid except for expiry
     token = create_raw_token(
         dict(
-            url=urljoin(client.base_url, "/workspace/workspace"),
+            url=urljoin(str(client.base_url), "/workspace/workspace"),
             user="user",
             expiry=datetime.now(timezone.utc) - timedelta(hours=1),
         ),
