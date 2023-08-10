@@ -188,9 +188,10 @@ def workspace_release(
 
     # rewrite location header to point to our upload endpoint, so that clients
     # will know where to post their upload requests to.
-    response.headers["Release-API-Location"] = request.url_for(
+    upload_url = request.url_for(
         "release_file_upload", workspace=workspace, release_id=release_id
     )
+    response.headers["Release-API-Location"] = str(upload_url)
     return response
 
 
