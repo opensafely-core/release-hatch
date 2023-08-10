@@ -8,3 +8,4 @@ httpx
 aiofiles
 itsdangerous
 requests
+pydantic~=1.10
