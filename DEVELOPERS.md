@@ -4,6 +4,10 @@
 
 ### TPP
 release-hatch is deployed on L4 under `/d/release-hatch-2/`.
+
+It runs on python3.9 because that's what TPP have installed for us.
+To upgrade this we need to either ask TPP to install a different version or decommission os-release so this can run on L3.
+
 It is running in a terminal under @ghickman's account via `./run.sh`.
 
 Should it break any other user _should_ be able to run the same command from the same directory.
