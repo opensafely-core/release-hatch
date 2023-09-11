@@ -217,9 +217,9 @@ pytest==6.2.5 \
     # via
     #   -r requirements.dev.in
     #   pytest-httpx
-pytest-httpx==0.23.1 \
-    --hash=sha256:ba38a9e6c685d3cf6197551a79bf7e41f8bbc57a6d1de65b537f77e87f56ecd3 \
-    --hash=sha256:cfed19eb8b13cbdf464bbb1c4ef88717d88d42334aa9ce516e56e46975c77f74
+pytest-httpx==0.24.0 \
+    --hash=sha256:193cecb57a005eb15288f68986f328d4c8d06c0b7c4ef1ce512e024cbb1d5961 \
+    --hash=sha256:259e6266cf3e04eb8fcc18dff262657ad96f6b8668dc2171fb353eaec5571889
     # via -r requirements.dev.in
 pyyaml==6.0.1 \
     --hash=sha256:062582fca9fabdd2c8b54a3ef1c978d786e0f6b3a1510e0ac93ef59e0ddae2bc \
@@ -297,18 +297,7 @@ toml==0.10.2 \
 tomli==1.2.0 \
     --hash=sha256:056f0376bf5a6b182c513f9582c1e5b0487265eb6c48842b69aa9ca1cd5f640a \
     --hash=sha256:d60e681734099207a6add7a10326bc2ddd1fdc36c1b0f547d00ef73ac63739c2
-    # via
-    #   black
-    #   build
-    #   coverage
-    #   pep517
-    #   pip-tools
-typing-extensions==4.7.1 \
-    --hash=sha256:440d5dd3af93b060174bf433bccd69b0babc3b15b1a8dca43789fd7f61514b36 \
-    --hash=sha256:b75ddc264f0ba5615db7ba217daeb99701ad295353c45f9e95963337ceeeffb2
-    # via
-    #   -c requirements.prod.txt
-    #   black
+    # via pep517
 virtualenv==20.21.0 \
     --hash=sha256:31712f8f2a17bd06234fa97fdf19609e789dd4e3e4bf108c3da71d710651adbc \
     --hash=sha256:f50e3e60f990a0757c9b68333c9fdaa72d7188caa417f96af9e52407831a3b68
