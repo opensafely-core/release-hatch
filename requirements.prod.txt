@@ -119,11 +119,13 @@ typing-extensions==4.7.1 \
     # via
     #   fastapi
     #   pydantic
+    #   starlette
+    #   uvicorn
 urllib3==1.26.6 \
     --hash=sha256:39fb8672126159acb139a7718dd10806104dec1e2f0f6c88aab05d17df10c8d4 \
     --hash=sha256:f57b4c16c62fa2760b7e3d97c35b255512fb6b59a259730f36ba32ce9f8e342f
     # via requests
-uvicorn==0.22.0 \
-    --hash=sha256:79277ae03db57ce7d9aa0567830bbb51d7a612f54d6e1e3e92da3ef24c2c8ed8 \
-    --hash=sha256:e9434d3bbf05f310e762147f769c9f21235ee118ba2d2bf1155a7196448bd996
+uvicorn==0.24.0.post1 \
+    --hash=sha256:09c8e5a79dc466bdf28dead50093957db184de356fcdc48697bad3bde4c2588e \
+    --hash=sha256:7c84fea70c619d4a710153482c0d230929af7bcf76c7bfa6de151f0a3a80121e
     # via -r requirements.prod.in
