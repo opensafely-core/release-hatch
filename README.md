@@ -1,3 +1,7 @@
+# DEPRECATED
+
+Viewing and releasing files now happens via https://github.com/opensafely-core/airlock
+
 # release-hatch
 
 This provides a small API to authenicate and serve medium-privacy files in TRE
